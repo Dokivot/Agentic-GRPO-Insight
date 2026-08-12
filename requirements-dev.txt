@@ -1,0 +1,8 @@
+# Local development dependencies (lightweight, no GPU required)
+# Cloud environment is defined in docker/Dockerfile
+
+pyyaml>=6.0
+requests>=2.31
+numpy>=1.26
+transformers>=4.46.0
+swanlab>=0.3.0

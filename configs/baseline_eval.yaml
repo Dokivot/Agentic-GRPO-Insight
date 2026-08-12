@@ -1,0 +1,42 @@
+exp_id: exp_001
+phase: baseline_eval
+seed: 42
+
+agent_model:
+  name: Qwen/Qwen2.5-7B-Instruct
+  dtype: bfloat16
+  tensor_parallel: 2
+  vllm:
+    port: 8000
+    gpu_memory_utilization: 0.35
+    max_model_len: 32768
+    trust_remote_code: true
+
+simulator_model:
+  name: Qwen/Qwen2.5-72B-Instruct-AWQ
+  dtype: float16
+  quantization: awq
+  tensor_parallel: 2
+  vllm:
+    port: 8001
+    gpu_memory_utilization: 0.50
+    max_model_len: 8192
+    trust_remote_code: true
+
+tau_bench:
+  domain: airline
+  max_turns: 30
+  num_rollouts: 1
+  agent_temperature: 0.0
+  simulator_temperature: 0.7
+
+metrics:
+  recorder: swanlab_json
+  swanlab_project: agentic-rl-tau-bench
+  swanlab_run_name: exp_001_baseline
+  local_dir: results/baseline/metrics/
+
+output:
+  results_dir: results/baseline/
+  save_trajectories: true
+  save_metrics: true

@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker
+docker/.env
+
+# Results (keep metrics JSON, gitignore large trajectory files)
+results/*/trajectories/
+results/*/checkpoints/
+results/**/*.bin
+results/**/*.safetensors
+
+# Logs
+logs/*.log
+logs/*.err
+
+# Model checkpoints / artifacts
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+*.gguf
+
+# HuggingFace cache
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SwanLab local
+swanlog/
+
+# Large data
+data/models/
+data/sft_dataset/*.jsonl
+!data/task_splits/*.json

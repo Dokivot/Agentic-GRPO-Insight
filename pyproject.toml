@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "doproj-agentic-rl"
+version = "0.1.0"
+description = "Agentic RL research: vanilla GRPO failure modes on tau-bench-airline"
+requires-python = ">=3.10"
+
+[tool.setuptools]
+packages = ["src"]
+
+[tool.setuptools.package-dir]
+src = "src"

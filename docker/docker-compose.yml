@@ -1,0 +1,119 @@
+# Docker Compose for Agentic RL evaluation
+# Services: vllm-agent (7B), vllm-simulator (72B-AWQ), eval
+# Both vLLM instances share the same 2x A800-80GB GPUs.
+# Memory budget: agent=0.35, simulator=0.50 (total ~85% per GPU)
+
+services:
+  vllm-agent:
+    image: agentic-rl:latest
+    container_name: vllm-agent
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0,1
+      - HUGGINGFACE_HUB_CACHE=${MODEL_CACHE:-/data/models}
+      - VLLM_WORKER_MULTIPROC_METHOD=spawn
+    volumes:
+      - ${MODEL_CACHE:-/data/models}:/data/models
+      - ../results:/workspace/results
+      - ../configs:/workspace/configs
+      - ../data:/workspace/data
+      - ../src:/workspace/src
+      - ../scripts:/workspace/scripts
+    ports:
+      - "8000:8000"
+    command: >
+      python -m vllm.entrypoints.openai.api_server
+      --model Qwen/Qwen2.5-7B-Instruct
+      --served-model-name Qwen/Qwen2.5-7B-Instruct
+      --tensor-parallel-size 2
+      --gpu-memory-utilization 0.35
+      --max-model-len 32768
+      --trust-remote-code
+      --dtype bfloat16
+      --port 8000
+      --host 0.0.0.0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 2
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/models"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+    restart: unless-stopped
+
+  vllm-simulator:
+    image: agentic-rl:latest
+    container_name: vllm-simulator
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0,1
+      - HUGGINGFACE_HUB_CACHE=${MODEL_CACHE:-/data/models}
+      - VLLM_WORKER_MULTIPROC_METHOD=spawn
+    volumes:
+      - ${MODEL_CACHE:-/data/models}:/data/models
+      - ../results:/workspace/results
+      - ../configs:/workspace/configs
+      - ../data:/workspace/data
+      - ../src:/workspace/src
+      - ../scripts:/workspace/scripts
+    ports:
+      - "8001:8000"
+    command: >
+      python -m vllm.entrypoints.openai.api_server
+      --model Qwen/Qwen2.5-72B-Instruct-AWQ
+      --served-model-name Qwen/Qwen2.5-72B-Instruct-AWQ
+      --tensor-parallel-size 2
+      --gpu-memory-utilization 0.50
+      --max-model-len 8192
+      --trust-remote-code
+      --dtype float16
+      --quantization awq
+      --port 8000
+      --host 0.0.0.0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 2
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/models"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 180s
+    restart: unless-stopped
+
+  eval:
+    image: agentic-rl:latest
+    container_name: eval
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0,1
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-dummy-key}
+      - SWANLAB_API_KEY=${SWANLAB_API_KEY:-}
+      - SWANLAB_MODE=${SWANLAB_MODE:-cloud}
+      - HUGGINGFACE_HUB_CACHE=${MODEL_CACHE:-/data/models}
+    volumes:
+      - ${MODEL_CACHE:-/data/models}:/data/models
+      - ../results:/workspace/results
+      - ../configs:/workspace/configs
+      - ../data:/workspace/data
+      - ../src:/workspace/src
+      - ../scripts:/workspace/scripts
+      - ../research:/workspace/research
+    depends_on:
+      vllm-agent:
+        condition: service_healthy
+      vllm-simulator:
+        condition: service_healthy
+    command: >
+      python scripts/run_eval.py
+      --config configs/baseline_eval.yaml
