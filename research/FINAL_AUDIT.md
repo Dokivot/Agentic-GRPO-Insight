@@ -1,17 +1,17 @@
-# FINAL_AUDIT.md — Independent Review of Final Experiment
+# FINAL_AUDIT.md — 最终实验独立审查
 
-**Status:** NOT STARTED
+**状态：** 未开始
 
-This document will contain an independent review of the final experiment, checking for:
+本文档将包含对最终实验的独立审查，检查以下方面：
 
-- Data leakage
-- Benchmark contamination
-- Confounding variables
-- Cherry-picking
-- Insufficient repetitions
-- Metric manipulation
-- Implementation bugs
-- Unsupported conclusions
-- Reproducibility issues
+- 数据泄露
+- 基准污染
+- 混杂变量
+- 挑选性呈现结果（cherry-picking）
+- 重复次数不足
+- 指标操纵
+- 实现缺陷
+- 缺乏支撑的结论
+- 可复现性问题
 
-(To be completed after final validation experiments)
+（在最终验证实验完成后填写）

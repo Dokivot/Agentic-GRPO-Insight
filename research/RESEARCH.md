@@ -1,224 +1,224 @@
-# RESEARCH.md — Technical Research
+# RESEARCH.md — 技术调研
 
-## 1. tau-bench Benchmark
+## 1. tau-bench 评测基准
 
-### Overview
+### 概述
 
-tau-bench is a benchmark for evaluating tool-agent-user interaction in multi-turn settings.
+tau-bench 是一个用于评估多轮场景中工具-智能体-用户交互的基准。
 
-- Source: Yao et al., 2024 (GitHub: sierra-research/tau-bench)
-- Structure: task = (user instruction, tool set, database, expected DB state)
-- Evaluation: deterministic DB state check (not LLM-judge) — key reliability advantage
-- Success: binary (DB state matches expected or not)
+- 来源：Yao et al., 2024（GitHub: sierra-research/tau-bench）
+- 结构：task = (用户指令, 工具集, 数据库, 期望数据库状态)
+- 评测方式：确定性数据库状态检查（非 LLM-judge）— 这是可靠性的关键优势
+- 成功判定：二元（数据库状态是否匹配期望）
 
-### Domains
+### 领域
 
-| Domain | Tools | Tasks | Complexity |
-|--------|-------|-------|------------|
-| retail | 9 | 115 | Lower |
-| airline | 27 | 50 | Higher |
-| telecom | varies | varies | Medium |
+| 领域 | 工具数 | 任务数 | 复杂度 |
+|------|--------|--------|--------|
+| retail | 9 | 115 | 较低 |
+| airline | 27 | 50 | 较高 |
+| telecom | 不定 | 不定 | 中等 |
 
-This project uses **airline** (27 tools, 50 tasks).
+本项目使用 **airline** 领域（27 个工具，50 个任务）。
 
-### User Simulator
+### 用户模拟器
 
-tau-bench uses an LLM-based user simulator that follows a hidden instruction.
-Default: gpt-4o-mini. This project uses Qwen2.5-72B-AWQ as a self-contained alternative.
+tau-bench 使用基于 LLM 的用户模拟器，遵循隐藏指令。
+默认使用 gpt-4o-mini。本项目使用 Qwen2.5-72B-AWQ 作为自包含替代方案。
 
-### Evaluation Flow
+### 评测流程
 
 ```
-Task (instruction + tools + DB)
-  -> Agent generates actions (tool calls)
-  -> User simulator responds
-  -> Repeat until agent declares done or max_turns
-  -> Check final DB state against expected
-  -> Binary success/fail
+任务 (指令 + 工具 + 数据库)
+  -> 智能体生成动作 (工具调用)
+  -> 用户模拟器响应
+  -> 循环直到智能体宣布完成或达到最大轮次
+  -> 检查最终数据库状态是否匹配期望
+  -> 二元成功/失败
 ```
 
-### Key Properties for RL
+### 对 RL 的关键特性
 
-- Terminal reward only (sparse)
-- Multi-turn (variable length trajectories)
-- Tool calls must be valid JSON
-- Context grows with each turn
-- Deterministic reward (no reward model needed)
+- 仅终端奖励（稀疏）
+- 多轮交互（变长轨迹）
+- 工具调用必须是合法 JSON
+- 上下文随轮次增长
+- 确定性奖励（无需奖励模型）
 
 ---
 
-## 2. GRPO Algorithm
+## 2. GRPO 算法
 
-### Source
+### 来源
 
-DeepSeekMath (Shao et al., 2024).
+DeepSeekMath（Shao et al., 2024）。
 
-### Core Mechanism
+### 核心机制
 
-For each prompt, sample G outputs. Compute group-relative advantage:
+对每个 prompt 采样 G 个输出，计算组相对优势：
 
 ```
 A_i = (r_i - mean(r)) / std(r)
 ```
 
-No value model — simpler than PPO, less memory.
+无 value model — 比 PPO 简单，内存占用更少。
 
-### KL Penalty
+### KL 惩罚
 
-KL divergence penalty to reference policy (coefficient typically 0.04).
+对参考策略的 KL 散度惩罚（系数通常 0.04）。
 
-### Known Issues for Multi-turn
+### 多轮场景已知问题
 
-1. Reward sparsity: only terminal reward, no intermediate signal
-2. Long trajectories: more tokens, more memory, more compute
-3. Credit assignment: trajectory-level reward -> per-token credit is unclear
-4. Context growth: input grows each turn -> KV cache pressure, truncation risk
-5. High variance: when success rate is low, most groups have all-zero rewards -> std=0 -> no gradient signal
-6. Observation masking: environment/tool response tokens should not contribute to policy gradient loss
+1. 奖励稀疏：仅终端奖励，无中间信号
+2. 长轨迹：更多 token，更多内存，更多计算
+3. 信用分配：轨迹级奖励 -> 逐 token 信用分配不明确
+4. 上下文增长：每轮输入增长 -> KV cache 压力，截断风险
+5. 高方差：成功率低时，大多数组的奖励全零 -> std=0 -> 无梯度信号
+6. 观测 mask：环境/工具响应的 token 不应参与策略梯度损失
 
 ---
 
-## 3. Multi-turn RL Challenges (Literature)
+## 3. 多轮 RL 挑战（文献）
 
 ### RAGEN
 
-Agent RL framework. Key insight: observation tokens must be masked from policy gradient loss.
-Only agent-generated tokens should receive gradient.
+Agent RL 框架。关键洞见：观测 token 必须从策略梯度损失中 mask 掉。
+仅智能体生成的 token 应接收梯度。
 
 ### ToRA / AgentTuning
 
-Tool-integrated reasoning. SFT + RL pipeline for tool use.
-Key challenge: trajectory-level reward -> per-token credit assignment.
+工具集成推理。SFT + RL 流水线用于工具使用。
+关键挑战：轨迹级奖励 -> 逐 token 信用分配。
 
-### Common Patterns
+### 常见模式
 
-- SFT warm-start before RL (几乎所有成功案例都使用 SFT 热启动)
-- Trajectory filtering: only train on successful trajectories for SFT
-- Observation masking in RL loss
-- Context length management critical for long trajectories
+- RL 前的 SFT 热启动（几乎所有成功案例都使用 SFT 热启动）
+- 轨迹过滤：SFT 仅在成功轨迹上训练
+- RL 损失中的观测 mask
+- 上下文长度管理对长轨迹至关重要
 
 ---
 
-## 4. Frameworks
+## 4. 框架
 
 ### veRL
 
-- Hybrid engine: training + rollout co-located on same GPUs
-- Native GRPO support
-- Multi-turn support (via environment adapter)
-- Ray-based orchestration
-- Key advantage for 2x A800: can't afford separate training + rollout GPU groups
+- 混合引擎：训练 + rollout 共置在同一组 GPU
+- 原生 GRPO 支持
+- 多轮支持（通过环境适配器）
+- 基于 Ray 的编排
+- 对 2x A800 的关键优势：无法负担独立的训练 + rollout GPU 组
 
 ### OpenRLHF
 
-- Ray-based, PPO/GRPO, vLLM integration
-- Less optimized for multi-turn on limited GPUs
-- Fallback option if veRL multi-turn integration is unstable
+- 基于 Ray，PPO/GRPO，vLLM 集成
+- 在有限 GPU 上的多轮优化不足
+- 回退方案：若 veRL 多轮集成不稳定则改用
 
 ### TRL
 
-- Simple, HF ecosystem
-- Limited multi-turn agentic RL support
-- Not suitable for this project
+- 简单，HF 生态
+- 多轮 agentic RL 支持有限
+- 不适合本项目
 
 ### vLLM
 
-- PagedAttention for efficient KV cache management
-- Broad framework support, native veRL integration
-- OpenAI-compatible API for tau-bench integration
-- Prefix caching for multi-turn (shared prefix across turns)
+- PagedAttention 高效管理 KV cache
+- 框架支持广泛，原生 veRL 集成
+- OpenAI 兼容 API，便于 tau-bench 集成
+- Prefix caching 用于多轮（跨轮共享前缀）
 
 ### SGLang
 
-- RadixAttention, faster for some structured generation
-- Lacks veRL support — not viable for this project
+- RadixAttention，部分结构化生成场景更快
+- 缺乏 veRL 支持 — 本项目不可用
 
 ---
 
-## 5. Models
+## 5. 模型
 
-### Qwen2.5-7B-Instruct (Base Model)
+### Qwen2.5-7B-Instruct（基础模型）
 
-- 7.6B parameters
-- Context: 32768 tokens
-- Good tool-use capability out of box
-- BF16: ~14GB VRAM
+- 7.6B 参数
+- 上下文：32768 tokens
+- 开箱即用的工具使用能力
+- BF16：约 14GB VRAM
 
-### Qwen2.5-72B-Instruct-AWQ (Teacher + Simulator)
+### Qwen2.5-72B-Instruct-AWQ（教师 + 模拟器）
 
-- 72B parameters, AWQ 4-bit quantized
-- AWQ: ~40GB VRAM (TP=2: ~20GB/GPU)
-- High-quality tool use and instruction following
-- Serves as both teacher (SFT data generation) and user simulator
+- 72B 参数，AWQ 4-bit 量化
+- AWQ：约 40GB VRAM（TP=2：约 20GB/GPU）
+- 高质量工具使用和指令遵循
+- 同时充当教师（SFT 数据生成）和用户模拟器
 
 ---
 
-## 6. LoRA Fine-tuning
+## 6. LoRA 微调
 
-### Configuration
+### 配置
 
 - rank=64, alpha=128, dropout=0.05
-- Target: all linear layers (q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj)
-- Trainable params: ~0.5GB for 7B model
-- Memory: base model (14GB) + LoRA (0.5GB) + optimizer (1GB) = ~15.5GB
+- 目标：所有线性层（q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj）
+- 可训练参数：7B 模型约 0.5GB
+- 内存：基础模型 (14GB) + LoRA (0.5GB) + 优化器 (1GB) = 约 15.5GB
 
-### Why LoRA over Full FT
+### 为何选择 LoRA 而非全参数微调
 
-Memory constraint: 2x A800-80GB must co-locate training + rollout + 72B-AWQ simulator.
-Full FT would leave insufficient memory for vLLM KV cache and simulator.
-See DECISIONS.md D003 for detailed memory math.
-
----
-
-## 7. Known Failure Modes in Agentic RL
-
-### Tool-call errors
-- Invalid JSON in tool call output
-- Wrong tool name
-- Wrong arguments (type mismatch, missing required fields)
-
-### Context issues
-- Context overflow when trajectory is long
-- Truncation leading to malformed tool calls
-- KV cache exhaustion
-
-### Planning errors
-- Premature termination (agent declares done too early)
-- Loops (agent repeats same action without progress)
-- Wrong action sequence (valid tool calls but incorrect strategy)
-
-### User simulator issues
-- Simulator gives up or behaves unexpectedly
-- Simulator deviates from hidden instruction
-
-### RL-specific issues
-- All-zero reward groups (no gradient signal)
-- Reward hacking (agent finds shortcuts)
-- KL collapse (policy diverges too far from reference)
-- Training instability (loss spikes, NaN)
+内存约束：2x A800-80GB 需共存训练 + rollout + 72B-AWQ 模拟器。
+全参数微调会为 vLLM KV cache 和模拟器留下不足的内存。
+详见 DECISIONS.md D003 的详细内存计算。
 
 ---
 
-## 8. Hardware Requirements
+## 7. Agentic RL 已知失效模式
 
-### 2x A800-80GB Memory Budget
+### 工具调用错误
+- 工具调用输出中的 JSON 格式无效
+- 错误的工具名称
+- 错误的参数（类型不匹配、缺少必填字段）
 
-| Phase | Per-GPU Usage | Headroom |
-|-------|--------------|----------|
-| SFT data gen (72B-AWQ only) | ~20GB + KV | ~60GB |
-| SFT training (7B + LoRA) | ~16GB | ~64GB |
-| GRPO training (train mode) | ~33GB | ~47GB |
-| GRPO training (rollout mode) | ~62GB | ~18GB |
-| Eval (7B + 72B-AWQ co-located) | ~57GB | ~23GB |
+### 上下文问题
+- 长轨迹时上下文溢出
+- 截断导致工具调用格式错误
+- KV cache 耗尽
 
-### Bottleneck: GRPO Rollout Mode
+### 规划错误
+- 过早终止（智能体过早宣布完成）
+- 循环（智能体重复相同动作无进展）
+- 错误动作序列（工具调用合法但策略不正确）
 
-~18GB headroom per GPU is tight. Mitigations:
-- Reduce 72B-AWQ simulator gpu_memory_utilization
-- Reduce concurrent rollout count
-- Lower 7B rollout max_batch_tokens
+### 用户模拟器问题
+- 模拟器放弃或行为异常
+- 模拟器偏离隐藏指令
 
-## Status
+### RL 特有问题
+- 全零奖励组（无梯度信号）
+- 奖励黑客（智能体找到捷径）
+- KL 坍缩（策略偏离参考过远）
+- 训练不稳定（loss spike、NaN）
 
-Phase 2 — Technical Research: COMPLETE
-Next: Phase 3 — Architecture
+---
+
+## 8. 硬件需求
+
+### 2x A800-80GB 内存预算
+
+| 阶段 | 每卡用量 | 余量 |
+|------|---------|------|
+| SFT 数据生成（仅 72B-AWQ） | 约 20GB + KV | 约 60GB |
+| SFT 训练（7B + LoRA） | 约 16GB | 约 64GB |
+| GRPO 训练（训练模式） | 约 33GB | 约 47GB |
+| GRPO 训练（rollout 模式） | 约 62GB | 约 18GB |
+| 评测（7B + 72B-AWQ 共存） | 约 57GB | 约 23GB |
+
+### 瓶颈：GRPO Rollout 模式
+
+每卡约 18GB 余量较紧张。缓解措施：
+- 降低 72B-AWQ 模拟器的 gpu_memory_utilization
+- 减少并发 rollout 数
+- 降低 7B rollout 的 max_batch_tokens
+
+## 状态
+
+Phase 2 — 技术调研：已完成
+下一步：Phase 3 — 系统架构

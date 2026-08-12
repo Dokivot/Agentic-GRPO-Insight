@@ -1,76 +1,76 @@
-# EXPERIMENT_PLAN.md — Proposed Experiments
+# EXPERIMENT_PLAN.md — 拟议实验
 
-## Overview
+## 概述
 
-Experiments are proposed after baseline results are available and bottleneck analysis is complete.
-Each experiment follows the lifecycle defined in AGENTS.md Section 4.
-
----
-
-## exp_001 — Zero-shot Baseline Eval
-
-- **Question:** What is the out-of-box agentic capability of Qwen2.5-7B-Instruct on tau-bench-airline?
-- **Hypothesis:** The base model will have low success rate (< 20%) due to lack of task-specific training.
-- **Motivation:** Establish the lowest baseline. All improvements measured against this.
-- **Independent variables:** None (zero-shot, no training)
-- **Controlled variables:** model, benchmark, max_turns, temperature (greedy), simulator model
-- **Metrics:** task success rate, trajectory length, tool-call validity, context length, failure modes
-- **Expected outcome:** Low success rate with identifiable failure patterns
-- **Risk:** None
-- **Estimated cost:** ~0.5 GPU-hours (eval only)
-- **Status:** PENDING (code implemented, awaiting cloud execution)
+在 baseline 结果可用且瓶颈分析完成后，根据分析结果提出后续实验。
+每个实验遵循 AGENTS.md 第 4 节定义的生命周期。
 
 ---
 
-## exp_002 — SFT Warm-start (Planned)
+## exp_001 — 零样本 Baseline 评测
 
-- **Question:** How much does SFT on teacher trajectories improve success rate over zero-shot?
-- **Hypothesis:** SFT will significantly improve success rate and reduce tool-call errors.
-- **Motivation:** Natural next step after zero-shot baseline. Required warm-start before GRPO.
-- **Independent variables:** SFT training (LoRA on teacher trajectories)
-- **Controlled variables:** base model, benchmark, eval protocol, simulator
-- **Metrics:** task success rate (sft_train vs holdout), training loss, tool-call validity
-- **Expected outcome:** Moderate success rate improvement, especially on sft_train tasks
-- **Risk:** Overfitting to training tasks; low data quantity if teacher success rate is low
-- **Estimated cost:** ~2 GPU-hours (data gen + SFT training + eval)
-- **Status:** NOT STARTED (depends on exp_001 completion and bottleneck analysis)
-
----
-
-## exp_003 — Vanilla GRPO (Planned)
-
-- **Question:** What is the performance of vanilla GRPO after SFT warm-start?
-- **Hypothesis:** GRPO will improve over SFT-only, but with identifiable failure modes.
-- **Motivation:** This is the core baseline under study.
-- **Independent variables:** GRPO training (LoRA, vanilla hyperparameters)
-- **Controlled variables:** SFT model, benchmark, eval protocol, simulator
-- **Metrics:** task success rate, reward curve, KL divergence, policy entropy, rollout success rate, failure modes
-- **Expected outcome:** Improvement over SFT, but with clear bottlenecks
-- **Risk:** Training instability, all-zero reward groups, OOM in rollout mode
-- **Estimated cost:** ~8-16 GPU-hours (training + checkpoint evals)
-- **Status:** NOT STARTED (depends on exp_002 completion)
+- **问题：** Qwen2.5-7B-Instruct 在 tau-bench-airline 上的开箱 agentic 能力如何？
+- **假设：** 基础模型因缺乏任务特定训练，成功率较低（< 20%）。
+- **动机：** 建立最低 baseline。所有改进都以此为基准衡量。
+- **自变量：** 无（零样本，不训练）
+- **控制变量：** 模型、基准、max_turns、temperature（贪心）、模拟器模型
+- **指标：** 任务成功率、轨迹长度、工具调用有效率、上下文长度、失效模式
+- **预期结果：** 低成功率，可识别的失效模式（工具调用错误、规划错误）
+- **风险：** 无
+- **预估成本：** 约 0.5 GPU 小时（仅评测）
+- **状态：** 待执行（代码已实现，等待云端执行）
 
 ---
 
-## exp_004+ — Targeted Improvements (To Be Planned)
+## exp_002 — SFT 热启动（已规划）
 
-Proposed experiments based on bottleneck analysis of exp_003.
-Each experiment should address one identified bottleneck with one primary hypothesis.
+- **问题：** 基于教师轨迹的 SFT 能比零样本提升多少成功率？
+- **假设：** SFT 将显著提升成功率并减少工具调用错误。
+- **动机：** 零样本 baseline 后的自然下一步。GRPO 前必需的热启动。
+- **自变量：** SFT 训练（基于教师轨迹的 LoRA）
+- **控制变量：** 基础模型、基准、评测协议、模拟器
+- **指标：** 任务成功率（sft_train vs holdout）、训练 loss、工具调用有效率
+- **预期结果：** 中等成功率提升，尤其在 sft_train 任务上
+- **风险：** 对训练任务过拟合；教师成功率低导致数据量不足
+- **预估成本：** 约 2 GPU 小时（数据生成 + SFT 训练 + 评测）
+- **状态：** 未开始（依赖 exp_001 完成和瓶颈分析）
 
-Template:
+---
+
+## exp_003 — Vanilla GRPO（已规划）
+
+- **问题：** SFT 热启动后 vanilla GRPO 的表现如何？
+- **假设：** GRPO 将优于纯 SFT，但存在可识别的失效模式。
+- **动机：** 这是研究的核心 baseline。
+- **自变量：** GRPO 训练（LoRA，vanilla 超参数）
+- **控制变量：** SFT 模型、基准、评测协议、模拟器
+- **指标：** 任务成功率、奖励曲线、KL 散度、策略熵、rollout 成功率、失效模式
+- **预期结果：** 相比 SFT 有提升，但存在明确的瓶颈
+- **风险：** 训练不稳定、全零奖励组、rollout 模式 OOM
+- **预估成本：** 约 8-16 GPU 小时（训练 + checkpoint 评测）
+- **状态：** 未开始（依赖 exp_002 完成）
+
+---
+
+## exp_004+ — 针对性改进（待规划）
+
+基于 exp_003 的瓶颈分析提出后续实验。
+每个实验应针对一个已识别的瓶颈，测试一个主要假设。
+
+模板：
 ```
 exp_NNN:
-  question: ...
-  hypothesis: ...
-  motivation: ...
-  independent_variables: ...
-  controlled_variables: ...
-  metrics: ...
-  expected_outcome: ...
-  risk: ...
-  estimated_cost: ...
+  问题: ...
+  假设: ...
+  动机: ...
+  自变量: ...
+  控制变量: ...
+  指标: ...
+  预期结果: ...
+  风险: ...
+  预估成本: ...
 ```
 
-## Status
+## 状态
 
-Phase 6 — Experiment Plan: INITIAL (exp_001-003 defined, exp_004+ pending bottleneck analysis)
+Phase 6 — 实验计划：初始版本（exp_001-003 已定义，exp_004+ 待瓶颈分析后补充）

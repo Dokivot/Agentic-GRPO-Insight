@@ -1,47 +1,47 @@
-# EXPERIMENT_LOG.md — Chronological Experiment History
+# EXPERIMENT_LOG.md — 实验历史记录
 
-Never rewrite history to make it look cleaner. Append new findings.
+不得重写历史以使记录看起来更整洁。仅追加新发现。
 
 ---
 
-## exp_001 — Zero-shot Baseline Eval
+## exp_001 — 零样本 Baseline 评测
 
-**Date:** 2026-08-12 (planned)
+**日期：** 2026-08-12（计划）
 
-**Hypothesis:** The base model (Qwen2.5-7B-Instruct) will have low success rate (< 20%) on tau-bench-airline due to lack of task-specific training.
+**假设：** 基础模型 (Qwen2.5-7B-Instruct) 因缺乏任务特定训练，在 tau-bench-airline 上成功率较低 (< 20%)。
 
-**Question:** What is the out-of-box agentic capability of Qwen2.5-7B-Instruct on tau-bench-airline?
+**问题：** Qwen2.5-7B-Instruct 在 tau-bench-airline 上的开箱 agentic 能力如何？
 
-**Expected result:** Low success rate with identifiable failure patterns (tool-call errors, planning errors).
+**预期结果：** 低成功率，可识别的失效模式（工具调用错误、规划错误）。
 
-**Configuration:**
-- Model: Qwen/Qwen2.5-7B-Instruct (BF16, no quantization)
-- Simulator: Qwen/Qwen2.5-72B-Instruct-AWQ (AWQ 4-bit, temp=0.7)
-- Benchmark: tau-bench-airline, all 50 tasks
-- Decoding: greedy (temperature=0), 1 rollout/task
-- Max turns: 30
-- Hardware: 2x A800-80GB
-- Config file: configs/baseline_eval.yaml
+**配置：**
+- 模型：Qwen/Qwen2.5-7B-Instruct (BF16, 无量化)
+- 模拟器：Qwen/Qwen2.5-72B-Instruct-AWQ (AWQ 4-bit, temp=0.7)
+- 基准：tau-bench-airline，全部 50 任务
+- 解码：贪心 (temperature=0)，每任务 1 rollout
+- 最大轮次：30
+- 硬件：2x A800-80GB
+- 配置文件：configs/baseline_eval.yaml
 
-**Command:**
+**命令：**
 ```bash
 docker compose -f docker/docker-compose.yml up vllm-agent vllm-simulator -d
 docker compose -f docker/docker-compose.yml run eval
 ```
 
-**Status:** PENDING (code implemented, awaiting cloud execution)
+**状态：** 待执行（代码已实现，等待云端执行）
 
-**Results:** NOT YET RUN
+**结果：** 尚未运行
 
-**Analysis:** PENDING
+**分析：** 待定
 
 ---
 
-## Chronological Log
+## 时间线日志
 
-(Append new entries below as experiments are executed)
+（在下方追加新条目）
 
-| Timestamp | Event | Details |
-|-----------|-------|---------|
-| 2026-08-12 | Project initialized | Directory structure, research docs, code, Docker, configs created |
-| 2026-08-12 | exp_001 defined | Zero-shot baseline eval, code ready, awaiting cloud execution |
+| 时间 | 事件 | 详情 |
+|------|------|------|
+| 2026-08-12 | 项目初始化 | 目录结构、研究文档、代码、Docker、配置已创建 |
+| 2026-08-12 | exp_001 定义 | 零样本 baseline 评测，代码就绪，等待云端执行 |

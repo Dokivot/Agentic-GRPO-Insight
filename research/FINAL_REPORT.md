@@ -1,24 +1,24 @@
-# FINAL_REPORT.md — Final Engineering/Research Report
+# FINAL_REPORT.md — 最终工程/研究报告
 
-**Status:** NOT STARTED
+**状态：** 未开始
 
-This document will explain:
+本文档将涵盖以下内容：
 
-1. Problem
-2. Motivation
-3. Constraints
+1. 问题
+2. 动机
+3. 约束条件
 4. Baseline
-5. Research
-6. Architecture
-7. Technical choices
-8. Experiments
-9. Failures
-10. Successful optimizations
-11. Final configuration
-12. Quantitative improvement
-13. Trade-offs
-14. Limitations
-15. Remaining uncertainties
-16. Future work
+5. 技术调研
+6. 系统架构
+7. 技术选型
+8. 实验记录
+9. 失败记录
+10. 成功的优化
+11. 最终配置
+12. 量化提升
+13. 权衡
+14. 局限性
+15. 遗留的不确定性
+16. 未来工作
 
-(To be completed after all experiments are done)
+（在所有实验完成后填写）

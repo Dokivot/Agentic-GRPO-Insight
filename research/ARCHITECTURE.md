@@ -1,117 +1,117 @@
-# ARCHITECTURE.md — System Architecture
+# ARCHITECTURE.md — 系统架构
 
-## System Overview
+## 系统总览
 
 ```
 +-------------------------------------------------------------+
-|                    Cloud Server (2x A800-80GB)              |
+|                    云端服务器 (2x A800-80GB)                 |
 |                                                             |
 |  +--------------------------------------------------------+ |
-|  |  SFT Data Gen Phase (72B-AWQ only)                     | |
-|  |  vLLM: Qwen2.5-72B-AWQ (TP=2, port 8000)              | |
-|  |  Acts as: teacher agent + user simulator               | |
-|  |  -> tau-bench-airline (all 50 tasks x 16 rollouts)     | |
-|  |  -> trajectory collection -> success/contaminated filter| |
-|  |  -> partition:                                         | |
-|  |     40 train tasks success -> SFT training set          | |
-|  |     10 holdout tasks success -> _holdout_reference.jsonl| |
-|  |     contaminated -> contaminated.jsonl                  | |
+|  |  SFT 数据生成阶段 (仅需 72B-AWQ)                        | |
+|  |  vLLM: Qwen2.5-72B-AWQ (TP=2, 端口 8000)               | |
+|  |  同时充当: teacher agent + user simulator              | |
+|  |  -> tau-bench-airline (全部 50 任务 x 16 rollout)      | |
+|  |  -> 轨迹收集 -> 成功/污染过滤                           | |
+|  |  -> 按任务归属划分:                                     | |
+|  |     40 训练任务成功 -> SFT 训练集                       | |
+|  |     10 holdout 任务成功 -> _holdout_reference.jsonl    | |
+|  |     污染 -> contaminated.jsonl                         | |
 |  |  -> MetricsRecorder -> JSON + SwanLab                  | |
 |  +--------------------------------------------------------+ |
 |                                                             |
 |  +-----------+    +------------+    +---------------+      |
-|  | SFT Train |    | GRPO Train |    | Eval (all)    |      |
+|  | SFT 训练  |    | GRPO 训练  |    | 评测 (所有阶段)|     |
 |  | (LoRA)    |    | (LoRA,veRL)|    |               |      |
-|  | HF Trainer|    | Hybrid Eng |    | vLLM agent    |      |
-|  | DeepSpeed |    | (veRL)     |    | (7B, port8000)|      |
-|  | ZeRO-2    |    | + tau-bench|    | vLLM sim      |      |
-|  | 7B only   |    |   wrapper  |    | (72B-AWQ,8001)|      |
-|  | (no 72B)  |    | + Rollout  |    | -> tau-bench  |      |
-|  |           |    |   vLLM(7B) |    |   eval        |      |
-|  +-----------+    | + ext vLLM |    +---------------+      |
-|                   |   (72B sim)|                           |
+|  | HF Trainer|    | 混合引擎   |    | vLLM agent    |      |
+|  | DeepSpeed |    | (veRL)     |    | (7B, 端口8000)|      |
+|  | ZeRO-2    |    | + tau-bench|    | vLLM 模拟器   |      |
+|  | 仅需 7B   |    |   环境封装 |    | (72B-AWQ,8001)|      |
+|  | (无 72B)  |    | + Rollout  |    | -> tau-bench  |      |
+|  |           |    |   vLLM(7B) |    |   评测        |      |
+|  +-----------+    | + 外部 vLLM|    +---------------+      |
+|                   |  (72B 模拟)|                           |
 |                   +------------+                           |
 |                                                             |
-|  All phases -> MetricsRecorder -> local JSON + SwanLab     |
-|  All 50 tasks eval, report sft_train(40) / holdout(10)     |
+|  所有阶段 -> MetricsRecorder -> 本地 JSON + SwanLab        |
+|  全部 50 任务评测，按 sft_train(40) / holdout(10) 分组报告  |
 +---------------------------+---------------------------------+
                             |
                 scripts/sync_results.sh (rsync)
                             v
 +-------------------------------------------------------------+
-|                Local Repo (results/ copy)                   |
+|                    本地仓库 (results/ 副本)                 |
 |  results/baseline/  results/sft_data_gen/                  |
 |  results/sft_train/ results/grpo_train/                    |
 |  results/analysis/  ...                                    |
 +-------------------------------------------------------------+
 ```
 
-## Data Flow
+## 数据流
 
-1. **Teacher rollout:** Qwen2.5-72B-AWQ -> vLLM (single instance, agent + simulator) -> tau-bench-airline (50 tasks x 16 rollouts) -> trajectory collection -> success/contaminated filter -> partition by task ownership (40 train -> SFT set; 10 holdout -> _holdout_reference.jsonl; contaminated -> contaminated.jsonl) -> MetricsRecorder
-2. **SFT:** SFT training set -> train/val split (task-level, within 40 train tasks) -> HF Trainer + LoRA -> SFT model adapter -> MetricsRecorder (loss curve + post-train eval)
-3. **GRPO:** SFT model -> veRL hybrid engine (7B rollout) + external vLLM (72B-AWQ simulator) -> tau-bench env wrapper -> rollout generation -> reward (task success) -> GRPO update -> MetricsRecorder (per-step metrics)
-4. **Eval (any model):** vLLM agent (7B) + vLLM simulator (72B-AWQ) -> tau-bench eval -> raw trajectories -> metrics post-processor -> MetricsRecorder
-5. **Analysis:** load all phase metrics -> trajectory analyzer -> bottleneck ranker -> MetricsRecorder
-6. **Sync:** scripts/sync_results.sh rsync cloud results/ to local repo
+1. **教师 rollout：** Qwen2.5-72B-AWQ -> vLLM（单实例，同时充当 agent 和 simulator）-> tau-bench-airline（全部 50 任务 x 16 rollout）-> 轨迹收集 -> 成功/污染过滤 -> 按任务归属划分（40 训练任务成功 -> SFT 训练集；10 holdout 任务成功 -> _holdout_reference.jsonl；污染 -> contaminated.jsonl）-> MetricsRecorder
+2. **SFT：** SFT 训练集 -> 训练/验证切分（任务级，从 40 个训练任务内部切分）-> HF Trainer + LoRA -> SFT 模型 adapter -> MetricsRecorder（loss 曲线 + 训练后评测）
+3. **GRPO：** SFT 模型 -> veRL 混合引擎（7B rollout）+ 外部 vLLM（72B-AWQ 模拟器）-> tau-bench 环境封装 -> rollout 生成 -> 奖励（任务成功）-> GRPO 更新 -> MetricsRecorder（每步指标）
+4. **评测（任意模型）：** vLLM agent（7B）+ vLLM 模拟器（72B-AWQ）-> tau-bench 评测 -> 原始轨迹 -> 指标后处理 -> MetricsRecorder
+5. **分析：** 加载所有阶段指标 -> 轨迹分析器 -> 瓶颈排序器 -> MetricsRecorder
+6. **同步：** scripts/sync_results.sh 将云端 results/ rsync 到本地仓库
 
-## GPU Allocation
+## GPU 分配
 
-| Phase | GPU 0 | GPU 1 | Total/GPU |
-|-------|-------|-------|-----------|
-| SFT data gen | 72B-AWQ (TP=2) | 72B-AWQ (TP=2) | ~20GB + KV |
-| SFT training | 7B + LoRA (TP=2) | 7B + LoRA (TP=2) | ~16GB |
-| GRPO train (train mode) | 7B+LoRA+opt + 72B-AWQ | same | ~33GB |
-| GRPO train (rollout mode) | 7B vLLM KV + 72B-AWQ | same | ~62GB |
-| Eval | 7B agent + 72B-AWQ sim | same | ~57GB |
+| 阶段 | GPU 0 | GPU 1 | 每卡总计 |
+|------|-------|-------|---------|
+| SFT 数据生成 | 72B-AWQ (TP=2) | 72B-AWQ (TP=2) | 约 20GB + KV |
+| SFT 训练 | 7B + LoRA (TP=2) | 7B + LoRA (TP=2) | 约 16GB |
+| GRPO 训练（训练模式） | 7B+LoRA+优化器 + 72B-AWQ | 同左 | 约 33GB |
+| GRPO 训练（rollout 模式） | 7B vLLM KV + 72B-AWQ | 同左 | 约 62GB |
+| 评测 | 7B agent + 72B-AWQ 模拟器 | 同左 | 约 57GB |
 
-## Memory Budget
+## 内存预算
 
-### Eval Phase (per GPU, TP=2, two vLLM instances)
+### 评测阶段（每卡，TP=2，两个 vLLM 实例共存）
 
-| Component | Memory (GB) |
-|-----------|------------|
-| 7B agent weights (BF16, TP=2) | 7 |
-| 72B-AWQ sim weights (4-bit, TP=2) | 20 |
-| 7B agent KV cache | ~15 |
-| 72B-AWQ sim KV cache | ~15 |
-| **Total per GPU** | **~57** |
-| **Available** | **80** |
-| **Headroom** | **~23** |
+| 组件 | 内存 (GB) |
+|------|----------|
+| 7B agent 权重 (BF16, TP=2) | 7 |
+| 72B-AWQ 模拟器权重 (4-bit, TP=2) | 20 |
+| 7B agent KV cache | 约 15 |
+| 72B-AWQ 模拟器 KV cache | 约 15 |
+| **每卡总计** | **约 57** |
+| **可用** | **80** |
+| **余量** | **约 23** |
 
-### GRPO Phase (per GPU, TP=2, veRL hybrid + 72B-AWQ sim)
+### GRPO 阶段（每卡，TP=2，veRL 混合引擎 + 72B-AWQ 模拟器）
 
-| Component | Memory (GB) | Train Mode | Rollout Mode |
-|-----------|------------|------------|--------------|
-| 7B weights (BF16, TP=2) | 7 | yes | yes |
-| LoRA adapter + opt + grad | 1 | yes | - |
-| Activations (batch=4, seq=8192) | 5 | yes | - |
-| 7B vLLM KV cache (rollout) | 25 | - | yes |
-| 72B-AWQ sim weights (4-bit, TP=2) | 20 | yes | yes |
-| 72B-AWQ sim KV cache | 10 | - | yes |
-| **Total per GPU** | | **~33** | **~62** |
-| **Available** | | **80** | **80** |
-| **Headroom** | | **~47** | **~18** |
+| 组件 | 内存 (GB) | 训练模式 | Rollout 模式 |
+|------|----------|---------|-------------|
+| 7B 权重 (BF16, TP=2) | 7 | 是 | 是 |
+| LoRA adapter + 优化器 + 梯度 | 1 | 是 | - |
+| 激活值 (batch=4, seq=8192) | 5 | 是 | - |
+| 7B vLLM KV cache (rollout) | 25 | - | 是 |
+| 72B-AWQ 模拟器权重 (4-bit, TP=2) | 20 | 是 | 是 |
+| 72B-AWQ 模拟器 KV cache | 10 | - | 是 |
+| **每卡总计** | | **约 33** | **约 62** |
+| **可用** | | **80** | **80** |
+| **余量** | | **约 47** | **约 18** |
 
-Note: ~18GB headroom in rollout mode is tight. Mitigations: reduce 72B-AWQ sim gpu_memory_utilization, reduce concurrent rollouts, lower 7B rollout max_batch_tokens.
+注：rollout 模式下每卡约 18GB 余量较紧张。缓解措施：降低 72B-AWQ 模拟器的 gpu_memory_utilization、减少并发 rollout 数、降低 7B rollout 的 max_batch_tokens。
 
-## Concurrency
+## 并发
 
-- SFT data gen: all 50 tasks parallel (tau-bench supports concurrent execution, single vLLM instance)
-- Eval: all 50 tasks parallel (two vLLM instances, ~30-50 concurrent requests)
-- GRPO rollout: group size G=8, per-prompt batch, all rollouts via veRL vLLM parallel; 72B-AWQ sim handles corresponding user simulation requests
+- SFT 数据生成：全部 50 任务并行（tau-bench 支持并发执行，单 vLLM 实例）
+- 评测：全部 50 任务并行（两个 vLLM 实例，约 30-50 并发请求）
+- GRPO rollout：组大小 G=8，按 prompt batch，所有 rollout 通过 veRL vLLM 并行；72B-AWQ 模拟器同时处理对应用户模拟请求
 
-## Failure Boundaries
+## 故障边界
 
-- vLLM OOM (dual instance) -> reduce gpu_memory_utilization or concurrent requests
-- tau-bench timeout (max turns exceeded) -> record as trajectory failure, not crash
-- User simulator failure -> tau-bench handles gracefully, records as task failure
-- veRL training instability (loss spike, NaN) -> checkpoint rollback, reduce learning rate
-- Context overflow (input > max_context_length) -> record as context overflow failure
-- 72B-AWQ sim vs veRL GPU contention -> manage CUDA_VISIBLE_DEVICES or vLLM gpu_memory_utilization limits
-- SwanLab network unreachable -> auto-fallback to pure local JSON, experiment unaffected
+- vLLM OOM（双实例共存）-> 降低 gpu_memory_utilization 或减少并发请求
+- tau-bench 超时（超过最大轮次）-> 记录为轨迹失败，非崩溃
+- 用户模拟器故障 -> tau-bench 优雅处理，记录为任务失败
+- veRL 训练不稳定（loss spike、NaN）-> checkpoint 回滚，降低学习率
+- 上下文溢出（input > max_context_length）-> 记录为上下文溢出失败
+- 72B-AWQ 模拟器与 veRL 混合引擎 GPU 竞争 -> 管理 CUDA_VISIBLE_DEVICES 或 vLLM gpu_memory_utilization 限制
+- SwanLab 网络不可达 -> 自动回退为纯本地 JSON 记录，实验不受影响
 
-## Status
+## 状态
 
-Phase 3 — Architecture: COMPLETE
-Next: Phase 4 — Baseline
+Phase 3 — 系统架构：已完成
+下一步：Phase 4 — Baseline

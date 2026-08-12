@@ -1,5 +1,5 @@
-# Local development dependencies (lightweight, no GPU required)
-# Cloud environment is defined in docker/Dockerfile
+# 本地开发依赖（轻量级，无需 GPU）
+# 云端完整环境见 docker/Dockerfile
 
 pyyaml>=6.0
 requests>=2.31

@@ -1,47 +1,46 @@
-# FAILURE_LOG.md — Failure Investigations
+# FAILURE_LOG.md — 失效调查记录
 
-Detailed failure investigations for OOM, CUDA errors, crashes, deadlocks, timeouts,
-invalid outputs, tool-call failures, training instability, data corruption, unexpected metrics.
+用于记录 OOM、CUDA 错误、崩溃、死锁、超时、无效输出、工具调用失败、训练不稳定、数据损坏、异常指标等详细失效调查。
 
 ---
 
-## Failure Investigation Template
+## 失效调查模板
 
 ```
-## F-NNN: [Title]
+## F-NNN: [标题]
 
-**Date:** ...
-**Experiment:** exp_NNN
-**Severity:** high/medium/low
+**日期：** ...
+**实验：** exp_NNN
+**严重程度：** 高/中/低
 
-**Observed failure:**
+**观察到的失效：**
 ...
 
-**Evidence:**
-- Error message / log excerpt
-- Metrics anomaly
+**证据：**
+- 错误信息 / 日志摘录
+- 指标异常
 
-**Suspected root cause:**
+**疑似根因：**
 ...
 
-**Verified root cause (if confirmed):**
+**已确认根因（若已验证）：**
 ...
 
-**Attempted fixes:**
+**尝试的修复：**
 1. ...
 2. ...
 
-**Lessons learned:**
+**经验教训：**
 ...
 
-**Next step:**
+**下一步：**
 ...
 ```
 
 ---
 
-(Append failure investigations below as they occur)
+（在下方追加失效调查记录）
 
-| ID | Date | Experiment | Severity | Status |
-|----|------|------------|----------|--------|
-| (none yet) | | | | |
+| ID | 日期 | 实验 | 严重程度 | 状态 |
+|----|------|------|---------|------|
+| （暂无） | | | | |
