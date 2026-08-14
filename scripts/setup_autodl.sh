@@ -12,6 +12,7 @@ AUTODL_TMP="${AUTODL_TMP:-/root/autodl-tmp}"
 MODEL_CACHE="${MODEL_CACHE:-$AUTODL_TMP/models}"
 PIP_MIRROR="${PIP_MIRROR:-https://pypi.tuna.tsinghua.edu.cn/simple}"
 HF_MIRROR="${HF_MIRROR:-https://hf-mirror.com}"
+TORCH_INDEX_URL="${TORCH_INDEX_URL:-https://mirrors.aliyun.com/pytorch-wheels/cu126/}"
 
 echo "============================================"
 echo "  DoProj — AutoDL 环境配置"
@@ -19,6 +20,7 @@ echo "============================================"
 echo "  数据盘: $AUTODL_TMP"
 echo "  模型缓存: $MODEL_CACHE"
 echo "  pip 镜像: $PIP_MIRROR"
+echo "  PyTorch 镜像: $TORCH_INDEX_URL"
 echo "  HF 镜像: $HF_MIRROR"
 echo ""
 
@@ -95,7 +97,7 @@ if python -c "import torch; assert torch.cuda.is_available()" 2>/dev/null; then
 else
     echo "  安装 PyTorch 2.7.0 + CUDA 12.6..."
     pip install torch==2.7.0 torchvision==0.22.0 \
-        --index-url https://download.pytorch.org/whl/cu126 \
+        --index-url "$TORCH_INDEX_URL" \
         --extra-index-url https://pypi.org/simple
 fi
 echo ""
