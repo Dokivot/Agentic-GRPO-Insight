@@ -20,22 +20,25 @@ env/
 *.swo
 *~
 
-# Docker
-docker/.env
-
-# Results — 提交所有结果文件（含轨迹 JSON），仅排除模型权重和 checkpoint
-results/*/checkpoints/
-results/**/*.bin
-results/**/*.safetensors
-
-# Experiments output (large trajectory data, not committed)
-experiments/
-
 # Logs
 logs/*.log
 logs/*.err
 
-# Model checkpoints / artifacts
+# Experiments output — symlinked to AutoDL data disk, never committed
+experiments/
+
+# Results — small artifacts copied by save_artifacts.sh, tracked by git
+# Exclude large file types that should never end up in git
+results/**/*.jsonl
+results/**/*.safetensors
+results/**/*.bin
+results/**/*.pt
+results/**/*.pth
+results/**/*.ckpt
+results/**/*.gguf
+results/*/checkpoints/
+
+# Model checkpoints / artifacts (global)
 *.pt
 *.pth
 *.ckpt

@@ -95,3 +95,35 @@ requirements.txt       # Python 依赖
 
 所有结果可从以下要素复现：代码版本 + 配置 + 模型 ID + 种子。
 指标通过 SwanLab + 本地 JSON 双通道持久化，云端与本地均保存副本。
+
+## 实验产物保存
+
+AutoDL 系统盘在实例关机后会被清空，只有数据盘 `/root/autodl-tmp` 持久保存。
+`setup_autodl.sh` 会创建符号链接 `experiments -> /root/autodl-tmp/experiments`，
+确保所有实验产物自动写入数据盘。
+
+每步实验后运行 `save_artifacts.sh` 将产物分发到三处：
+
+| 产物 | 大小 | 存储位置 | 方法 |
+|------|------|---------|------|
+| 评测摘要 (summary.md, metrics JSON) | 小 | GitHub | `save_artifacts.sh results --commit --push` |
+| 瓶颈报告 (bottleneck_report) | 小 | GitHub | 同上 |
+| 配置快照 (config.yaml) | 小 | GitHub | 同上 |
+| 任务切分 (task_splits) | 小 | GitHub | 同上 |
+| 完整评测报告 (eval_report.json) | 中-大 | HuggingFace Hub | `save_artifacts.sh hf` |
+| SFT 数据集 (train.jsonl) | 大 | HuggingFace Hub | 同上 |
+| LoRA adapter | 中 | HuggingFace Hub | 同上 |
+| 合并后模型 (sft_lora_merged) | 大 | AutoDL 数据盘 | 已在 `/root/autodl-tmp/models/` |
+
+```bash
+# 保存小产物到 results/ 并推送到 GitHub
+bash scripts/save_artifacts.sh results --commit --push
+
+# 上传大产物到 HuggingFace Hub（需要 export HF_TOKEN=xxx）
+bash scripts/save_artifacts.sh hf
+
+# 全部保存
+bash scripts/save_artifacts.sh all --commit --push
+```
+
+修改 `save_artifacts.sh` 顶部的 `HF_USER` 变量为你的 HuggingFace 用户名。

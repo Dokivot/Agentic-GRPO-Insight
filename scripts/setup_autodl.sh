@@ -22,6 +22,28 @@ echo "  pip 镜像: $PIP_MIRROR"
 echo "  HF 镜像: $HF_MIRROR"
 echo ""
 
+# --- 创建 experiments 符号链接到数据盘 ---
+# AutoDL 系统盘在实例关机后会清空，数据盘 /root/autodl-tmp 持久保存
+# 将 experiments/ 链接到数据盘，确保所有实验产物不会丢失
+EXP_DATA_DIR="$AUTODL_TMP/experiments"
+mkdir -p "$EXP_DATA_DIR"
+if [ -L "$PROJECT_ROOT/experiments" ]; then
+    echo "experiments 符号链接已存在"
+elif [ -d "$PROJECT_ROOT/experiments" ]; then
+    echo "  experiments/ 已是实体目录，迁移内容到数据盘..."
+    cp -rn "$PROJECT_ROOT/experiments/"* "$EXP_DATA_DIR/" 2>/dev/null || true
+    rm -rf "$PROJECT_ROOT/experiments"
+    ln -s "$EXP_DATA_DIR" "$PROJECT_ROOT/experiments"
+    echo "  已迁移并创建符号链接: experiments -> $EXP_DATA_DIR"
+else
+    ln -s "$EXP_DATA_DIR" "$PROJECT_ROOT/experiments"
+    echo "  已创建符号链接: experiments -> $EXP_DATA_DIR"
+fi
+
+# 创建 results/ 目录（小产物 git 追踪目录）
+mkdir -p "$PROJECT_ROOT/results"
+echo ""
+
 # --- 验证 GPU ---
 echo "[1/7] 验证 GPU..."
 nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader
@@ -35,10 +57,23 @@ echo ""
 # --- 创建 conda 环境 ---
 echo "[2/7] 创建 conda 环境..."
 CONDA_ENV_NAME="agentic-rl"
+
+# AutoDL 预配置的清华 conda 镜像偶发 403，重置为默认频道
+echo "  检查 conda 频道配置..."
+CONDA_CHANNELS=$(conda config --show channels 2>/dev/null || echo "")
+if echo "$CONDA_CHANNELS" | grep -q "tuna.tsinghua"; then
+    echo "  检测到清华镜像频道，可能 403，重置为默认频道..."
+    conda config --remove-key channels 2>/dev/null || true
+    conda config --add channels defaults 2>/dev/null || true
+    echo "  conda 频道已重置"
+else
+    echo "  conda 频道配置正常"
+fi
+
 if conda env list | grep -q "$CONDA_ENV_NAME"; then
     echo "  conda 环境 '$CONDA_ENV_NAME' 已存在，跳过创建"
 else
-    conda create -n "$CONDA_ENV_NAME" python=3.10 -y
+    conda create -n "$CONDA_ENV_NAME" python=3.10 -y --override-channels -c defaults
     echo "  conda 环境 '$CONDA_ENV_NAME' 创建完成"
 fi
 
@@ -161,3 +196,13 @@ echo "  3. 或手动启动 vLLM + 评测:"
 echo "     bash scripts/vllm_server/7b.sh  &  (GPU0, port 8000)"
 echo "     bash scripts/vllm_server/72b.sh &  (GPU1, port 8001)"
 echo "     python scripts/eval/run_baseline_eval.py --config configs/baseline_eval.yaml"
+echo ""
+echo "保存实验产物（每步实验后执行）:"
+echo "  bash scripts/save_artifacts.sh results --commit --push  # 小文件 -> GitHub"
+echo "  bash scripts/save_artifacts.sh hf                        # 大文件 -> HuggingFace Hub"
+echo "  bash scripts/save_artifacts.sh all                       # 全部"
+echo ""
+echo "存储布局:"
+echo "  experiments/ -> $AUTODL_TMP/experiments  (符号链接, 数据盘持久保存)"
+echo "  results/      (小产物, git 追踪, push 到 GitHub)"
+echo "  HF Hub        (大产物: LoRA 权重, SFT 数据集, 评测报告)"
