@@ -10,7 +10,7 @@ cd "$PROJECT_ROOT"
 # AutoDL 数据盘路径
 AUTODL_TMP="${AUTODL_TMP:-/root/autodl-tmp}"
 MODEL_CACHE="${MODEL_CACHE:-$AUTODL_TMP/models}"
-PIP_MIRROR="${PIP_MIRROR:-https://pypi.tuna.tsinghua.edu.cn/simple}"
+PIP_MIRROR="${PIP_MIRROR:-https://mirrors.aliyun.com/pypi/simple/}"
 HF_MIRROR="${HF_MIRROR:-https://hf-mirror.com}"
 TORCH_INDEX_URL="${TORCH_INDEX_URL:-https://mirrors.aliyun.com/pytorch-wheels/cu126/}"
 
