@@ -128,20 +128,26 @@ rm -f /tmp/req_no_torch.txt
 # Flash Attention（需从源码编译）
 echo "  安装 Flash Attention..."
 FLASH_ATTN_VERSION="2.8.3.post1"
-FLASH_ATTN_WHEEL="flash_attn-${FLASH_ATTN_VERSION}+cu12torch2.7cxx11abiTRUE-cp310-cp310-linux_x86_64.whl"
-FLASH_ATTN_URL="https://github.com/Dao-AILab/flash-attention/releases/download/v${FLASH_ATTN_VERSION}/${FLASH_ATTN_WHEEL}"
 
-# 先尝试直接下载预编译 wheel（setup.py 自动下载常因 GitHub 连接问题失败）
-if curl -L -o "/tmp/${FLASH_ATTN_WHEEL}" "$FLASH_ATTN_URL" 2>/dev/null && [ -s "/tmp/${FLASH_ATTN_WHEEL}" ]; then
-    echo "  从 GitHub 下载预编译 wheel..."
-    pip install "/tmp/${FLASH_ATTN_WHEEL}" && rm -f "/tmp/${FLASH_ATTN_WHEEL}"
-    echo "  Flash Attention 安装成功"
+# 先检查是否已安装
+if python -c "import flash_attn; print(flash_attn.__version__)" 2>/dev/null | grep -q "$FLASH_ATTN_VERSION"; then
+    echo "  Flash Attention $FLASH_ATTN_VERSION 已安装，跳过"
 else
-    echo "  GitHub 下载失败，尝试从源码编译（可能需要 5-10 分钟）..."
-    MAX_JOBS=4 pip install flash-attn==${FLASH_ATTN_VERSION} --no-build-isolation || {
-        echo "  [警告] Flash Attention 安装失败，vLLM 将使用替代 attention 后端"
-    }
-    rm -f "/tmp/${FLASH_ATTN_WHEEL}"
+    FLASH_ATTN_WHEEL="flash_attn-${FLASH_ATTN_VERSION}+cu12torch2.7cxx11abiTRUE-cp310-cp310-linux_x86_64.whl"
+    FLASH_ATTN_URL="https://github.com/Dao-AILab/flash-attention/releases/download/v${FLASH_ATTN_VERSION}/${FLASH_ATTN_WHEEL}"
+
+    # 先尝试直接下载预编译 wheel（--max-time 防止 GitHub 连不上时无限挂起）
+    if curl -L --connect-timeout 15 --max-time 120 -o "/tmp/${FLASH_ATTN_WHEEL}" "$FLASH_ATTN_URL" 2>/dev/null && [ -s "/tmp/${FLASH_ATTN_WHEEL}" ]; then
+        echo "  从 GitHub 下载预编译 wheel..."
+        pip install "/tmp/${FLASH_ATTN_WHEEL}" && rm -f "/tmp/${FLASH_ATTN_WHEEL}"
+        echo "  Flash Attention 安装成功"
+    else
+        echo "  GitHub 下载失败，尝试从源码编译（可能需要 5-10 分钟）..."
+        MAX_JOBS=4 pip install flash-attn==${FLASH_ATTN_VERSION} --no-build-isolation || {
+            echo "  [警告] Flash Attention 安装失败，vLLM 将使用替代 attention 后端"
+        }
+        rm -f "/tmp/${FLASH_ATTN_WHEEL}"
+    fi
 fi
 
 # 安装本项目
