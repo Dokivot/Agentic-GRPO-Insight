@@ -110,7 +110,7 @@ if ! python -c "import torchvision; print(torchvision.__version__)" 2>/dev/null 
     || {
         echo "  镜像源未找到 torchvision，回退 PyTorch 官方源..."
         pip install torchvision==0.22.0 \
-            --index-url https://download.pytorch.org/whl/cu126/
+            --no-deps --index-url https://download.pytorch.org/whl/cu126/
     }
 else
     echo "  torchvision $(python -c 'import torchvision; print(torchvision.__version__)') 已安装"
@@ -121,7 +121,8 @@ echo ""
 echo "[4/7] 安装核心依赖..."
 # torch/torchvision 已在 step 3 安装，跳过避免镜像源找不到
 grep -v -E '^(torch|torchvision)==' "$PROJECT_ROOT/requirements.txt" > /tmp/req_no_torch.txt
-pip install -r /tmp/req_no_torch.txt -i "$PIP_MIRROR"
+pip install -r /tmp/req_no_torch.txt -i "$PIP_MIRROR" \
+    --extra-index-url https://pypi.org/simple
 rm -f /tmp/req_no_torch.txt
 
 # Flash Attention（需从源码编译）
