@@ -26,6 +26,7 @@ logs/*.err
 
 # Experiments output — symlinked to AutoDL data disk, never committed
 experiments/
+experiments
 
 # Results — small artifacts copied by save_artifacts.sh, tracked by git
 # Exclude large file types that should never end up in git
