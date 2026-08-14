@@ -177,12 +177,12 @@ class TrajectoryAnalyzer:
         }
 
     def _extract_messages(self, traj: dict) -> list[dict]:
-        for key in ("messages", "trajectory", "chat_history", "traj"):
+        for key in ("raw_messages", "messages", "trajectory", "chat_history", "traj"):
             if key in traj and isinstance(traj[key], list):
                 return traj[key]
         info = traj.get("info", {})
         if isinstance(info, dict):
-            for key in ("messages", "trajectory", "chat_history"):
+            for key in ("raw_messages", "messages", "trajectory", "chat_history"):
                 if key in info and isinstance(info[key], list):
                     return info[key]
         return []

@@ -1,5 +1,5 @@
-# baseline 评测配置
-# 7B policy (GPU0, port 8000) + 72B-AWQ user sim (GPU1, port 8001)
+# SFT 后评测配置
+# policy = SFT-merged 7B, user sim = 72B-AWQ
 env:
   name: airline
   user_strategy: llm
@@ -13,7 +13,7 @@ policy:
   base_url: "http://localhost:8000/v1"
   temperature: 0.7
   top_p: 0.9
-  max_tokens: 1024
+  max_tokens: 4096
 
 eval:
   num_tasks: 50
@@ -22,12 +22,8 @@ eval:
   num_workers: 2
 
 output:
-  dir: "experiments/baseline_airline"
+  dir: "experiments/eval_sft_airline"
 
-metrics:
-  swanlab_project: "agentic-rl-tau-bench"
-  swanlab_run_name: "exp_001_baseline"
-
-exp_id: exp_001
-phase: baseline_eval
+exp_id: exp_002
+phase: sft_eval
 seed: 42

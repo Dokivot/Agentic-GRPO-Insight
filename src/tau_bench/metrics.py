@@ -147,15 +147,15 @@ class MetricsProcessor:
     def _extract_messages(self, traj: dict) -> list[dict]:
         """Extract the message list from a trajectory dict.
 
-        tau-bench stores messages under various keys depending on version.
+       tau-bench stores messages under various keys depending on version.
         """
-        for key in ("messages", "trajectory", "chat_history", "traj"):
+        for key in ("raw_messages", "messages", "trajectory", "chat_history", "traj"):
             if key in traj and isinstance(traj[key], list):
                 return traj[key]
         # Some versions nest under "info"
         info = traj.get("info", {})
         if isinstance(info, dict):
-            for key in ("messages", "trajectory", "chat_history"):
+            for key in ("raw_messages", "messages", "trajectory", "chat_history"):
                 if key in info and isinstance(info[key], list):
                     return info[key]
         logger.warning("Could not extract messages from trajectory keys: %s",

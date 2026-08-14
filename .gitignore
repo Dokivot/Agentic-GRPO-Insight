@@ -23,11 +23,13 @@ env/
 # Docker
 docker/.env
 
-# Results (keep metrics JSON, gitignore large trajectory files)
-results/*/trajectories/
+# Results — 提交所有结果文件（含轨迹 JSON），仅排除模型权重和 checkpoint
 results/*/checkpoints/
 results/**/*.bin
 results/**/*.safetensors
+
+# Experiments output (large trajectory data, not committed)
+experiments/
 
 # Logs
 logs/*.log

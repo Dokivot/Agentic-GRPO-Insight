@@ -9,7 +9,23 @@ description = "Agentic RL 研究：vanilla GRPO 在 tau-bench-airline 上的失�
 requires-python = ">=3.10"
 
 [tool.setuptools]
-packages = ["src"]
+packages = [
+    "src",
+    "src.envs",
+    "src.models",
+    "src.evaluation",
+    "src.training",
+    "src.tau_bench",
+    "src.analysis",
+    "src.utils",
+]
 
 [tool.setuptools.package-dir]
 src = "src"
+"src.envs" = "src/envs"
+"src.models" = "src/models"
+"src.evaluation" = "src/evaluation"
+"src.training" = "src/training"
+"src.tau_bench" = "src/tau_bench"
+"src.analysis" = "src/analysis"
+"src.utils" = "src/utils"

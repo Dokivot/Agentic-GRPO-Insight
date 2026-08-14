@@ -2,38 +2,75 @@
 
 研究 vanilla GRPO 在多轮工具调用场景中的失效模式。基础模型：Qwen2.5-7B-Instruct。评测环境：tau-bench-airline（50 个任务，27 个工具）。教师/模拟器：Qwen2.5-72B-AWQ。硬件：2x A800-80GB。
 
-## 快速开始（云端服务器）
+## 快速开始（AutoDL）
 
 ```bash
 # 1. 克隆并进入项目
 git clone <repo-url> && cd DoProj
 
-# 2. 构建 Docker 镜像并下载模型
-bash scripts/setup_env.sh
+# 2. 一键环境配置（conda 环境 + 依赖 + patched tau-bench + 模型下载）
+bash scripts/setup_autodl.sh
 
-# 3. 设置 SwanLab API Key（可选，不可用时自动回退为纯本地记录）
+# 3. 激活环境
+conda activate agentic-rl
+
+# 4. 设置 SwanLab API Key（可选，不可用时自动回退为纯本地记录）
 export SWANLAB_API_KEY=<your-key>
 
-# 4. 启动推理服务（agent + simulator）
-docker compose -f docker/docker-compose.yml up vllm-agent vllm-simulator -d
+# 5. 一键 baseline 评测（自动启动 vLLM → 评测 → 清理）
+bash scripts/run_eval_autodl.sh
 
-# 5. 运行 baseline 评测
-docker compose -f docker/docker-compose.yml run eval
+# 或手动启动 vLLM + 评测：
+bash scripts/vllm_server/7b.sh  &  # GPU0: 7B policy, port 8000
+bash scripts/vllm_server/72b.sh &  # GPU1: 72B-AWQ user sim, port 8001
+python scripts/eval/run_baseline_eval.py --config configs/baseline_eval.yaml
+```
 
-# 6. 同步结果到本地
-bash scripts/sync_results.sh user@cloud-host
+## SFT 管线
+
+```bash
+# 1. 数据采集（72B-AWQ 当 policy + user sim，best-of-16 拒绝采样）
+bash scripts/vllm_server/72b.sh &  # GPU0: 72B policy, port 8000
+# 需另开一个 72B 实例在 GPU1 port 8001 当 user sim
+python scripts/train/sft/collect_sft_data.py --config configs/train/sft/sft_collect_airline.yaml
+
+# 2. LoRA SFT 训练
+python scripts/train/sft/sft_train.py --config configs/train/sft/sft_airline_lora.yaml
+
+# 3. 合并 LoRA adapter
+python scripts/train/sft/merge_lora.py \
+    --base $AUTODL_TMP/models/Qwen2.5-7B-Instruct \
+    --adapter experiments/sft_lora \
+    --out $AUTODL_TMP/models/sft_lora_merged
+
+# 4. SFT 评测
+bash scripts/vllm_server/7b_sft.sh &  # GPU0: SFT-merged 7B, port 8000
+bash scripts/vllm_server/72b.sh &     # GPU1: 72B-AWQ user sim, port 8001
+python scripts/eval/eval_sft.py \
+    --config configs/eval/eval_sft_airline.yaml \
+    --split-file experiments/sft_collect_airline/split.json
 ```
 
 ## 项目结构
 
 ```
-research/        # 项目持久记忆（PROBLEM、RESEARCH、ARCHITECTURE 等）
-experiments/     # 每个实验的独立目录（exp_001/、exp_002/、...）
-results/         # 实验结果（指标、轨迹、日志）
-src/             # 源代码（tau_bench、data、inference、training、analysis、utils）
-configs/         # 各实验阶段的 YAML 配置
-scripts/         # 入口脚本（run_eval、setup_env、sync_results）
-docker/          # Dockerfile 和 docker-compose.yml
+research/              # 项目持久记忆（PROBLEM、RESEARCH、ARCHITECTURE 等）
+experiments/           # 实验输出目录
+src/                   # 源代码
+  envs/                # tau-bench 环境封装（TauBenchWrapper）
+  models/              # vLLM 策略封装（VLLMPolicy）
+  evaluation/          # pass^k 评测（run_eval）
+  training/            # SFT 数据集和训练
+  tau_bench/           # 任务切分和指标处理
+  analysis/            # 失败分析和瓶颈排序
+  utils/               # 配置加载、种子、指标记录
+configs/               # 各实验阶段的 YAML 配置
+scripts/               # 入口脚本
+  eval/                # 评测入口（baseline + SFT）
+  train/sft/           # SFT 管线（采集、训练、合并、检查）
+  vllm_server/         # vLLM 服务启动脚本
+third_party/           # patched tau-bench 文件（user_api_base 支持）
+requirements.txt       # Python 依赖
 ```
 
 ## 实验工作流

@@ -23,25 +23,24 @@ class TaskSplit:
 
     def __init__(self, split_dir: Path | str | None = None):
         self.split_dir = Path(split_dir) if split_dir else SPLIT_DIR
-        self._train_tasks: list[str] | None = None
-        self._holdout_tasks: list[str] | None = None
-        self._all_tasks: list[str] | None = None
+        self._train_tasks: list[int] | None = None
+        self._holdout_tasks: list[int] | None = None
+        self._all_tasks: list[int] | None = None
 
     # ------------------------------------------------------------------ #
     #  Loading from tau-bench                                            #
     # ------------------------------------------------------------------ #
 
     @staticmethod
-    def _load_task_ids_from_tau_bench() -> list[str]:
+    def _load_task_ids_from_tau_bench() -> list[int]:
         """Import airline task IDs from the installed tau-bench package.
 
         Raises:
             ImportError: if tau-bench is not installed.
         """
-        from tau_bench.envs.airline.tasks import TASKS  # type: ignore
+        from tau_bench.envs.airline.tasks_test import TASKS  # type: ignore
 
-        ids = [str(t.task_id) if hasattr(t, "task_id") else str(i)
-               for i, t in enumerate(TASKS)]
+        ids = [i for i in range(len(TASKS))]
         logger.info("Loaded %d airline task IDs from tau-bench", len(ids))
         return ids
 
@@ -86,7 +85,7 @@ class TaskSplit:
         )
         logger.info("Holdout task IDs: %s", holdout)
 
-    def load_split(self) -> tuple[list[str], list[str], list[str]]:
+    def load_split(self) -> tuple[list[int], list[int], list[int]]:
         """Load the split from persisted JSON files.
 
         Returns:
@@ -98,45 +97,46 @@ class TaskSplit:
         return self._train_tasks, self._holdout_tasks, self._all_tasks
 
     @property
-    def train_tasks(self) -> list[str]:
+    def train_tasks(self) -> list[int]:
         if self._train_tasks is None:
             self.load_split()
         return self._train_tasks  # type: ignore[return-value]
 
     @property
-    def holdout_tasks(self) -> list[str]:
+    def holdout_tasks(self) -> list[int]:
         if self._holdout_tasks is None:
             self.load_split()
         return self._holdout_tasks  # type: ignore[return-value]
 
     @property
-    def all_tasks(self) -> list[str]:
+    def all_tasks(self) -> list[int]:
         if self._all_tasks is None:
             self.load_split()
         return self._all_tasks  # type: ignore[return-value]
 
-    def get_group(self, task_id: str) -> str:
+    def get_group(self, task_id) -> str:
         """Return 'sft_train' or 'holdout' for a given task ID."""
-        if task_id in self.train_tasks:
+        tid = int(task_id)
+        if tid in self.train_tasks:
             return "sft_train"
-        if task_id in self.holdout_tasks:
+        if tid in self.holdout_tasks:
             return "holdout"
         return "unknown"
 
-    def is_holdout(self, task_id: str) -> bool:
-        return task_id in self.holdout_tasks
+    def is_holdout(self, task_id) -> bool:
+        return int(task_id) in self.holdout_tasks
 
     # ------------------------------------------------------------------ #
     #  Helpers                                                           #
     # ------------------------------------------------------------------ #
 
-    def _write_json(self, name: str, data: list[str]) -> None:
+    def _write_json(self, name: str, data: list) -> None:
         path = self.split_dir / name
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         logger.info("Wrote %s (%d items)", path, len(data))
 
-    def _read_json(self, name: str) -> list[str]:
+    def _read_json(self, name: str) -> list:
         path = self.split_dir / name
         if not path.exists():
             raise FileNotFoundError(
