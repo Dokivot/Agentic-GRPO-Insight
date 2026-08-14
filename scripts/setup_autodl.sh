@@ -82,6 +82,11 @@ conda activate "$CONDA_ENV_NAME"
 echo "  当前 Python: $(python --version)"
 echo ""
 
+# 先升级 pip（老版本 pip 无法正确解析 PyTorch wheel 索引，会导致 nvidia-cudnn-cu12 找不到）
+echo "  升级 pip..."
+pip install --upgrade pip setuptools wheel
+echo ""
+
 # --- 安装 PyTorch ---
 echo "[3/7] 安装 PyTorch..."
 if python -c "import torch; assert torch.cuda.is_available()" 2>/dev/null; then
@@ -90,13 +95,13 @@ if python -c "import torch; assert torch.cuda.is_available()" 2>/dev/null; then
 else
     echo "  安装 PyTorch 2.7.0 + CUDA 12.6..."
     pip install torch==2.7.0 torchvision==0.22.0 \
-        --index-url https://download.pytorch.org/whl/cu126
+        --index-url https://download.pytorch.org/whl/cu126 \
+        --extra-index-url https://pypi.org/simple
 fi
 echo ""
 
 # --- 安装核心依赖 ---
 echo "[4/7] 安装核心依赖..."
-pip install -i "$PIP_MIRROR" --upgrade pip setuptools wheel
 pip install -r "$PROJECT_ROOT/requirements.txt" -i "$PIP_MIRROR"
 
 # Flash Attention（需从源码编译）
