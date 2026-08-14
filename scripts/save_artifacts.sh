@@ -127,17 +127,35 @@ copy_results() {
             echo "  已设置 git 身份: DoProj <doproj@autodl.local>"
         fi
 
+        # 先推送之前未推送的提交（push 失败时本地会积压，下次运行先清掉）
+        if [ "$DO_PUSH" = true ]; then
+            UNPUSHED=$(git log --oneline origin/main..HEAD 2>/dev/null | wc -l)
+            if [ "$UNPUSHED" -gt 0 ]; then
+                echo "  发现 $UNPUSHED 个未推送提交，先尝试推送..."
+                git push || {
+                    echo "  [错误] 推送失败（GitHub 连接问题？），不再创建新提交避免重复。"
+                    echo "  网络恢复后重跑本脚本即可自动推送。"
+                    exit 1
+                }
+                echo "  已推送 $UNPUSHED 个积压提交。"
+            fi
+        fi
+
         git add results/ data/task_splits/ 2>/dev/null || git add results/
         if git diff --cached --quiet; then
             echo "没有新变更需要提交。"
         else
             git commit -m "save experiment results to results/"
             echo "已提交。"
-        fi
-        if [ "$DO_PUSH" = true ]; then
-            echo "推送到远程..."
-            git push
-            echo "已推送。"
+            if [ "$DO_PUSH" = true ]; then
+                echo "推送到远程..."
+                git push || {
+                    echo "  [错误] 推送失败，提交已保存在本地。"
+                    echo "  网络恢复后重跑本脚本即可自动推送。"
+                    exit 1
+                }
+                echo "已推送。"
+            fi
         fi
     fi
 }
