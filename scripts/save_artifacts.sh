@@ -119,9 +119,21 @@ copy_results() {
         echo "=========================================="
         echo "  Git 提交"
         echo "=========================================="
-        git add results/
-        git commit -m "save experiment results to results/"
-        echo "已提交。"
+
+        # AutoDL 新实例未配置 git 身份，设置默认值（仅限本仓库）
+        if ! git config user.email >/dev/null 2>&1; then
+            git config user.email "doproj@autodl.local"
+            git config user.name "DoProj"
+            echo "  已设置 git 身份: DoProj <doproj@autodl.local>"
+        fi
+
+        git add results/ data/task_splits/ 2>/dev/null || git add results/
+        if git diff --cached --quiet; then
+            echo "没有新变更需要提交。"
+        else
+            git commit -m "save experiment results to results/"
+            echo "已提交。"
+        fi
         if [ "$DO_PUSH" = true ]; then
             echo "推送到远程..."
             git push
