@@ -223,7 +223,7 @@ print(f'  PyTorch: {torch.__version__}')
 print(f'  CUDA 可用: {torch.cuda.is_available()}')
 print(f'  GPU 数量: {torch.cuda.device_count()}')
 for i in range(torch.cuda.device_count()):
-    print(f'  GPU {i}: {torch.cuda.get_device_name(i)} ({torch.cuda.get_device_properties(i).total_mem / 1024**3:.1f} GB)')
+    print(f'  GPU {i}: {torch.cuda.get_device_name(i)} ({torch.cuda.get_device_properties(i).total_memory / 1024**3:.1f} GB)')
 "
 python -c "import vllm; print(f'  vLLM: {vllm.__version__}')" 2>/dev/null || echo "  [警告] vLLM 导入失败"
 python -c "from tau_bench.envs import get_env; print(f'  tau-bench: 已安装 (patched)')" 2>/dev/null || echo "  [警告] tau-bench 导入失败"
