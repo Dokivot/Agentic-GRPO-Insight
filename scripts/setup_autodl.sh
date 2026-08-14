@@ -187,8 +187,11 @@ if [ -d "$MODEL_7B" ] && [ -f "$MODEL_7B/config.json" ]; then
     echo "  Qwen2.5-7B-Instruct 已缓存"
 else
     echo "  下载 Qwen/Qwen2.5-7B-Instruct..."
-    huggingface-cli download Qwen/Qwen2.5-7B-Instruct \
-        --local-dir "$MODEL_7B"
+    for i in 1 2 3 4 5; do
+        huggingface-cli download Qwen/Qwen2.5-7B-Instruct --local-dir "$MODEL_7B" && break
+        echo "  下载中断，第 $i 次重试（支持断点续传）..."
+        sleep 3
+    done
 fi
 
 # Qwen2.5-72B-Instruct-AWQ
@@ -197,8 +200,11 @@ if [ -d "$MODEL_72B" ] && [ -f "$MODEL_72B/config.json" ]; then
     echo "  Qwen2.5-72B-Instruct-AWQ 已缓存"
 else
     echo "  下载 Qwen/Qwen2.5-72B-Instruct-AWQ（约 40GB，可能需要较长时间）..."
-    huggingface-cli download Qwen/Qwen2.5-72B-Instruct-AWQ \
-        --local-dir "$MODEL_72B"
+    for i in 1 2 3 4 5; do
+        huggingface-cli download Qwen/Qwen2.5-72B-Instruct-AWQ --local-dir "$MODEL_72B" && break
+        echo "  下载中断，第 $i 次重试（支持断点续传）..."
+        sleep 3
+    done
 fi
 echo ""
 
