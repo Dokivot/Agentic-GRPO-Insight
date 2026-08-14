@@ -33,10 +33,12 @@ class MetricsProcessor:
         """Lazily load the Qwen2.5 tokenizer."""
         if self._tokenizer is None:
             from transformers import AutoTokenizer
+            from src.utils.config import resolve_model_path
+            local_path = resolve_model_path(self.tokenizer_model)
             self._tokenizer = AutoTokenizer.from_pretrained(
-                self.tokenizer_model, trust_remote_code=True,
+                local_path, trust_remote_code=True,
             )
-            logger.info("Loaded tokenizer: %s", self.tokenizer_model)
+            logger.info("Loaded tokenizer: %s", local_path)
         return self._tokenizer
 
     def count_tokens(self, text: str) -> int:

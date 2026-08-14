@@ -41,6 +41,7 @@ from src.analysis.trajectory_analyzer import TrajectoryAnalyzer
 from src.analysis.bottleneck_ranker import BottleneckRanker
 from src.utils.metrics_recorder import MetricsRecorder
 from src.utils.seed import set_seed
+from src.utils.config import resolve_model_path
 
 logging.basicConfig(
     level=logging.INFO,
@@ -136,7 +137,7 @@ def main():
 
     metrics_proc = MetricsProcessor(
         task_split=task_split,
-        tokenizer_model=cfg["policy"]["model_name"],
+        tokenizer_model=resolve_model_path(cfg["policy"]["model_name"]),
     )
 
     per_task = []

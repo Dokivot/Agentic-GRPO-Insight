@@ -16,6 +16,7 @@ from tqdm import tqdm
 
 from src.envs.tau_bench_wrapper import TauBenchWrapper, TrajectoryResult
 from typing import Optional
+from src.utils.config import resolve_model_path
 
 
 def _get_tokenizer(policy_factory):
@@ -25,8 +26,9 @@ def _get_tokenizer(policy_factory):
         model_name = getattr(policy, "model_name", None)
         if model_name:
             from transformers import AutoTokenizer
-            tok = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-            print(f"[pass_k_eval] Loaded tokenizer for {model_name}")
+            local_path = resolve_model_path(model_name)
+            tok = AutoTokenizer.from_pretrained(local_path, trust_remote_code=True)
+            print(f"[pass_k_eval] Loaded tokenizer for {local_path}")
             return tok
     except Exception as e:
         print(f"[pass_k_eval] Failed to load tokenizer: {e}, falling back to char length")
