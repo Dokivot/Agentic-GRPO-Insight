@@ -96,15 +96,33 @@ if python -c "import torch; assert torch.cuda.is_available()" 2>/dev/null; then
     echo "  PyTorch $TORCH_VER 已安装且 CUDA 可用，跳过安装"
 else
     echo "  安装 PyTorch 2.7.0 + CUDA 12.6..."
-    pip install torch==2.7.0 torchvision==0.22.0 \
+    pip install torch==2.7.0 \
         --index-url "$TORCH_INDEX_URL" \
         --extra-index-url https://pypi.org/simple
+fi
+
+# torchvision 单独安装（阿里云镜像可能缺 torchvision，需回退官方源）
+if ! python -c "import torchvision; print(torchvision.__version__)" 2>/dev/null | grep -q "0.22"; then
+    echo "  安装 torchvision 0.22.0..."
+    pip install torchvision==0.22.0 \
+        --index-url "$TORCH_INDEX_URL" \
+        --extra-index-url https://pypi.org/simple \
+    || {
+        echo "  镜像源未找到 torchvision，回退 PyTorch 官方源..."
+        pip install torchvision==0.22.0 \
+            --index-url https://download.pytorch.org/whl/cu126/
+    }
+else
+    echo "  torchvision $(python -c 'import torchvision; print(torchvision.__version__)') 已安装"
 fi
 echo ""
 
 # --- 安装核心依赖 ---
 echo "[4/7] 安装核心依赖..."
-pip install -r "$PROJECT_ROOT/requirements.txt" -i "$PIP_MIRROR"
+# torch/torchvision 已在 step 3 安装，跳过避免镜像源找不到
+grep -v -E '^(torch|torchvision)==' "$PROJECT_ROOT/requirements.txt" > /tmp/req_no_torch.txt
+pip install -r /tmp/req_no_torch.txt -i "$PIP_MIRROR"
+rm -f /tmp/req_no_torch.txt
 
 # Flash Attention（需从源码编译）
 echo "  安装 Flash Attention（可能需要 5-10 分钟编译）..."
