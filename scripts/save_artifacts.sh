@@ -260,16 +260,36 @@ print(f'LoRA adapter: https://huggingface.co/{repo_id}')
     # --- 3. 评测报告 ---
     echo ""
     echo "[3/3] 上传评测报告到 $HF_EVAL_REPO ..."
-    python3 -c "
+    if [ ! -d "$EXPERIMENTS_DIR" ]; then
+        echo "  [错误] experiments 目录不存在: $EXPERIMENTS_DIR"
+        echo "  请确认评测已运行，且 experiments 符号链接已创建"
+        echo "[跳过] 评测报告上传失败或不存在"
+    else
+        # 诊断: 显示找到的文件
+        echo "  扫描 $EXPERIMENTS_DIR ..."
+        for exp_dir in "$EXPERIMENTS_DIR"/*/; do
+            [ -d "$exp_dir" ] || continue
+            exp_name=$(basename "$exp_dir")
+            for f in eval_report.json split_eval_report.json; do
+                if [ -f "$exp_dir/$f" ]; then
+                    echo "  发现 $exp_name/$f"
+                fi
+            done
+        done
+        python3 -c "
 from huggingface_hub import HfApi, create_repo
-import os
+import os, sys
 api = HfApi(token=os.environ['HF_TOKEN'])
 repo_id = '${HF_EVAL_REPO}'
 try:
     create_repo(repo_id, repo_type='dataset', token=os.environ['HF_TOKEN'])
-except Exception:
-    pass
+except Exception as e:
+    print(f'  [info] create_repo (可能已存在): {e}', file=sys.stderr)
 exp_base = '${EXPERIMENTS_DIR}'
+if not os.path.isdir(exp_base):
+    print(f'  [错误] 目录不存在: {exp_base}', file=sys.stderr)
+    sys.exit(1)
+found = False
 for exp_name in sorted(os.listdir(exp_base)):
     exp_path = os.path.join(exp_base, exp_name)
     if not os.path.isdir(exp_path):
@@ -277,12 +297,18 @@ for exp_name in sorted(os.listdir(exp_base)):
     for fname in ['eval_report.json', 'split_eval_report.json']:
         fpath = os.path.join(exp_path, fname)
         if os.path.exists(fpath):
+            found = True
             api.upload_file(path_or_fileobj=fpath,
                             path_in_repo=f'{exp_name}/{fname}',
                             repo_id=repo_id, repo_type='dataset')
             print(f'  上传 {exp_name}/{fname}')
+if not found:
+    print(f'  [警告] 未找到任何 eval_report.json / split_eval_report.json', file=sys.stderr)
+    print(f'  搜索路径: {exp_base}', file=sys.stderr)
+    print(f'  请检查评测产出是否在该路径下', file=sys.stderr)
 print(f'评测报告: https://huggingface.co/datasets/{repo_id}')
-" 2>/dev/null || echo "[跳过] 评测报告上传失败或不存在"
+" || echo "[跳过] 评测报告上传失败或不存在"
+    fi
 
     echo ""
     echo "HuggingFace 上传完成。"
