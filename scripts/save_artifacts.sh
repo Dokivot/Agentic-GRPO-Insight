@@ -45,6 +45,22 @@ if [ -z "$ACTION" ]; then
 fi
 
 # ---------------------------------------------------------------------------
+# _copy_with_size_check: 复制文件到 results/，超过 50MB 则跳过并警告
+# ---------------------------------------------------------------------------
+_copy_with_size_check() {
+    local src="$1" dest="$2" label="$3"
+    local max_size=52428800  # 50 MB (GitHub 警告阈值)
+    local size
+    size=$(stat -c%s "$src" 2>/dev/null || stat -f%z "$src" 2>/dev/null || echo 0)
+    if [ "$size" -ge "$max_size" ]; then
+        echo "  跳过 $label (${size} bytes, >50MB, 不适合 git — 请用 HF 上传)"
+        return
+    fi
+    cp "$src" "$dest"
+    echo "  复制 $label (${size} bytes)"
+}
+
+# ---------------------------------------------------------------------------
 # copy_results: 将 experiments/ 中的小文件复制到 results/ 供 git 追踪
 # ---------------------------------------------------------------------------
 copy_results() {
@@ -67,7 +83,8 @@ copy_results() {
 
         # 顶层小文件
         for f in config.yaml summary.md train_summary.json train_config.yaml \
-                 collect_config.yaml split.json summary.json split_eval_report.json adapter_config.json; do
+                 collect_config.yaml split.json summary.json split_eval_report.json \
+                 eval_report.json adapter_config.json; do
             if [ -f "$exp_dir/$f" ]; then
                 cp "$exp_dir/$f" "$dest_dir/"
                 echo "  复制 $exp_name/$f"
@@ -81,13 +98,7 @@ copy_results() {
                 [ -f "$f" ] || continue
                 fname=$(basename "$f")
                 if [ "$fname" = "per_task_results.json" ]; then
-                    size=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f" 2>/dev/null || echo 0)
-                    if [ "$size" -lt 5242880 ]; then
-                        cp "$f" "$dest_dir/metrics/"
-                        echo "  复制 $exp_name/metrics/$fname (${size} bytes)"
-                    else
-                        echo "  跳过 $exp_name/metrics/$fname (${size} bytes, 太大)"
-                    fi
+                    _copy_with_size_check "$f" "$dest_dir/metrics/$fname" "$exp_name/metrics/$fname"
                 else
                     cp "$f" "$dest_dir/metrics/"
                     echo "  复制 $exp_name/metrics/$fname"
@@ -101,6 +112,18 @@ copy_results() {
             cp -r "$exp_dir"/analysis/* "$dest_dir/analysis/" 2>/dev/null || true
             echo "  复制 $exp_name/analysis/"
         fi
+
+        # SFT 数据采集产物（jsonl + meta.json，文件不大，追踪到 git）
+        for f in train.jsonl holdout_train.jsonl; do
+            if [ -f "$exp_dir/$f" ]; then
+                _copy_with_size_check "$exp_dir/$f" "$dest_dir/$f" "$exp_name/$f"
+            fi
+        done
+        for f in "$exp_dir"/task_*.jsonl "$exp_dir"/task_*.meta.json; do
+            [ -f "$f" ] || continue
+            fname=$(basename "$f")
+            _copy_with_size_check "$f" "$dest_dir/$fname" "$exp_name/$fname"
+        done
     done
 
     # 任务切分

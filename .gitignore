@@ -29,8 +29,8 @@ experiments/
 experiments
 
 # Results — small artifacts copied by save_artifacts.sh, tracked by git
-# Exclude large file types that should never end up in git
-results/**/*.jsonl
+# Includes eval reports, SFT data jsonl, meta files (all small enough for git)
+# Exclude large binary file types that should never end up in git
 results/**/*.safetensors
 results/**/*.bin
 results/**/*.pt
