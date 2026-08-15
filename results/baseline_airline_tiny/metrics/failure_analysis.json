@@ -1,0 +1,137 @@
+{
+  "total_trajectories": 4,
+  "total_failures": 4,
+  "total_successes": 0,
+  "failure_mode_distribution": {
+    "tool_call_error": {
+      "count": 0,
+      "pct": 0.0,
+      "example_task_ids": []
+    },
+    "context_overflow": {
+      "count": 0,
+      "pct": 0.0,
+      "example_task_ids": []
+    },
+    "max_turns_exceeded": {
+      "count": 1,
+      "pct": 25.0,
+      "example_task_ids": [
+        "1"
+      ]
+    },
+    "wrong_action": {
+      "count": 2,
+      "pct": 50.0,
+      "example_task_ids": [
+        "0",
+        "0"
+      ]
+    },
+    "user_simulator_breakdown": {
+      "count": 0,
+      "pct": 0.0,
+      "example_task_ids": []
+    },
+    "premature_termination": {
+      "count": 1,
+      "pct": 25.0,
+      "example_task_ids": [
+        "1"
+      ]
+    },
+    "loop": {
+      "count": 0,
+      "pct": 0.0,
+      "example_task_ids": []
+    },
+    "other": {
+      "count": 0,
+      "pct": 0.0,
+      "example_task_ids": []
+    }
+  },
+  "earliest_causal_failure": {
+    "max_turns_exceeded": {
+      "avg_turn": 32.0,
+      "common_patterns": [
+        "Reached max turns (30)"
+      ]
+    },
+    "wrong_action": {
+      "avg_turn": 21.0,
+      "common_patterns": [
+        "No explicit error detected; agent executed valid actions but final database state did not match"
+      ]
+    },
+    "premature_termination": {
+      "avg_turn": 22.0,
+      "common_patterns": [
+        "Agent declared completion prematurely"
+      ]
+    }
+  },
+  "per_trajectory": [
+    {
+      "task_id": "0",
+      "success": false,
+      "failure_mode": "wrong_action",
+      "earliest_causal_failure_turn": 20,
+      "earliest_causal_failure_description": "No explicit error detected; agent executed valid actions but final database state did not match",
+      "evidence": {
+        "signals": []
+      },
+      "n_turns": 21
+    },
+    {
+      "task_id": "0",
+      "success": false,
+      "failure_mode": "wrong_action",
+      "earliest_causal_failure_turn": 22,
+      "earliest_causal_failure_description": "No explicit error detected; agent executed valid actions but final database state did not match",
+      "evidence": {
+        "signals": []
+      },
+      "n_turns": 23
+    },
+    {
+      "task_id": "1",
+      "success": false,
+      "failure_mode": "max_turns_exceeded",
+      "earliest_causal_failure_turn": 32,
+      "earliest_causal_failure_description": "Reached max turns (30)",
+      "evidence": {
+        "signals": [
+          {
+            "turn": 32,
+            "mode": "max_turns_exceeded",
+            "detail": "Reached max turns (30)"
+          }
+        ]
+      },
+      "n_turns": 33
+    },
+    {
+      "task_id": "1",
+      "success": false,
+      "failure_mode": "premature_termination",
+      "earliest_causal_failure_turn": 22,
+      "earliest_causal_failure_description": "Agent declared completion prematurely",
+      "evidence": {
+        "signals": [
+          {
+            "turn": 22,
+            "mode": "premature_termination",
+            "detail": "Agent declared completion prematurely"
+          },
+          {
+            "turn": 32,
+            "mode": "max_turns_exceeded",
+            "detail": "Reached max turns (30)"
+          }
+        ]
+      },
+      "n_turns": 33
+    }
+  ]
+}

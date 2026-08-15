@@ -1,0 +1,26 @@
+env:
+  name: airline
+  task_split: test
+  user_base_url: http://localhost:8001/v1
+  user_model: Qwen/Qwen2.5-72B-Instruct-AWQ
+  user_provider: openai
+  user_strategy: llm
+eval:
+  max_turns: 30
+  num_samples_per_task: 2
+  num_tasks: 2
+  num_workers: 2
+exp_id: exp_001
+metrics:
+  swanlab_project: agentic-rl-tau-bench
+  swanlab_run_name: exp_001_baseline
+output:
+  dir: experiments/baseline_airline_tiny
+phase: baseline_eval
+policy:
+  base_url: http://localhost:8000/v1
+  max_tokens: 1024
+  model_name: Qwen/Qwen2.5-7B-Instruct
+  temperature: 0.7
+  top_p: 0.9
+seed: 42

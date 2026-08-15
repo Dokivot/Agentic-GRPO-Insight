@@ -1,0 +1,109 @@
+{
+  "exp_id": "exp_001",
+  "phase": "baseline_eval",
+  "timestamp": "2026-08-14T23:06:23.383106+00:00",
+  "swanlab_offline": true,
+  "task_success_rate": 0.0,
+  "pass_hat_1": 0.0,
+  "pass_hat_4": 0.0,
+  "pass_hat_8": 0.0,
+  "avg_turns": 13.0,
+  "avg_tool_calls": 8.25,
+  "error_rate": 0.25,
+  "num_tasks": 2,
+  "num_samples_per_task": 2,
+  "eval_time_seconds": 388.15407371520996,
+  "total_tasks": 4,
+  "successful_tasks": 0,
+  "sft_train_group": {
+    "total": 4,
+    "successful": 0,
+    "success_rate": 0.0
+  },
+  "holdout_group": {
+    "total": 0,
+    "successful": 0,
+    "success_rate": 0.0
+  },
+  "zero_success_tasks": [
+    "0",
+    "0",
+    "1",
+    "1"
+  ],
+  "avg_trajectory_length_turns": 27.5,
+  "max_trajectory_length_turns": 33,
+  "avg_context_length_tokens": 3596.75,
+  "max_context_length_tokens": 3748,
+  "p95_context_length_tokens": 3739.45,
+  "p99_context_length_tokens": 3746.29,
+  "avg_input_tokens_per_turn": 1850,
+  "avg_output_tokens_per_turn": 1743,
+  "total_input_tokens": 7400,
+  "total_output_tokens": 6972,
+  "total_tool_calls": 34,
+  "tool_call_validity_rate": 1.0,
+  "json_parse_failures": 0,
+  "invalid_tool_names": 0,
+  "invalid_arguments": 0,
+  "tool_execution_failures": 0,
+  "tool_call_count_distribution": {
+    "avg": 8.5,
+    "min": 7,
+    "max": 11
+  },
+  "total_eval_seconds": 388.15407371520996,
+  "throughput_tasks_per_min": 0.6183111713934731,
+  "avg_latency_per_task_seconds": 97.03851842880249,
+  "gpu_peak_memory_gb": 0.0,
+  "gpu_utilization_pct": 0.0,
+  "failure_mode_distribution": {
+    "tool_call_error": {
+      "count": 0,
+      "pct": 0.0,
+      "example_task_ids": []
+    },
+    "context_overflow": {
+      "count": 0,
+      "pct": 0.0,
+      "example_task_ids": []
+    },
+    "max_turns_exceeded": {
+      "count": 1,
+      "pct": 25.0,
+      "example_task_ids": [
+        "1"
+      ]
+    },
+    "wrong_action": {
+      "count": 2,
+      "pct": 50.0,
+      "example_task_ids": [
+        "0",
+        "0"
+      ]
+    },
+    "user_simulator_breakdown": {
+      "count": 0,
+      "pct": 0.0,
+      "example_task_ids": []
+    },
+    "premature_termination": {
+      "count": 1,
+      "pct": 25.0,
+      "example_task_ids": [
+        "1"
+      ]
+    },
+    "loop": {
+      "count": 0,
+      "pct": 0.0,
+      "example_task_ids": []
+    },
+    "other": {
+      "count": 0,
+      "pct": 0.0,
+      "example_task_ids": []
+    }
+  }
+}

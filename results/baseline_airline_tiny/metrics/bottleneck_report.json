@@ -1,0 +1,159 @@
+{
+  "bottleneck_ranking": [
+    {
+      "rank": 1,
+      "category": "quality",
+      "description": "Overall success rate: 0.0%",
+      "impact_score": 1.0,
+      "severity": "high"
+    },
+    {
+      "rank": 2,
+      "category": "correctness",
+      "mode": "wrong_action",
+      "description": [
+        "0",
+        "0"
+      ],
+      "count": 2,
+      "frequency": 0.5,
+      "severity": "high",
+      "impact_score": 0.5
+    },
+    {
+      "rank": 3,
+      "category": "performance",
+      "description": "Throughput: 0.6 tasks/min, avg latency: 97s/task",
+      "impact_score": 0.3,
+      "severity": "low"
+    },
+    {
+      "rank": 4,
+      "category": "correctness",
+      "mode": "max_turns_exceeded",
+      "description": [
+        "1"
+      ],
+      "count": 1,
+      "frequency": 0.25,
+      "severity": "medium",
+      "impact_score": 0.125
+    },
+    {
+      "rank": 5,
+      "category": "correctness",
+      "mode": "premature_termination",
+      "description": [
+        "1"
+      ],
+      "count": 1,
+      "frequency": 0.25,
+      "severity": "medium",
+      "impact_score": 0.125
+    },
+    {
+      "rank": 6,
+      "category": "memory",
+      "description": "GPU peak memory: 0.0 GB / 80 GB per GPU",
+      "impact_score": 0.0,
+      "severity": "low"
+    },
+    {
+      "rank": 7,
+      "category": "reliability",
+      "description": "Timeout/crash rate (to be measured during eval)",
+      "impact_score": 0.0,
+      "severity": "low"
+    }
+  ],
+  "failure_mode_summary": {
+    "total_failures": 4,
+    "distribution": {
+      "tool_call_error": {
+        "count": 0,
+        "pct": 0.0,
+        "example_task_ids": []
+      },
+      "context_overflow": {
+        "count": 0,
+        "pct": 0.0,
+        "example_task_ids": []
+      },
+      "max_turns_exceeded": {
+        "count": 1,
+        "pct": 25.0,
+        "example_task_ids": [
+          "1"
+        ]
+      },
+      "wrong_action": {
+        "count": 2,
+        "pct": 50.0,
+        "example_task_ids": [
+          "0",
+          "0"
+        ]
+      },
+      "user_simulator_breakdown": {
+        "count": 0,
+        "pct": 0.0,
+        "example_task_ids": []
+      },
+      "premature_termination": {
+        "count": 1,
+        "pct": 25.0,
+        "example_task_ids": [
+          "1"
+        ]
+      },
+      "loop": {
+        "count": 0,
+        "pct": 0.0,
+        "example_task_ids": []
+      },
+      "other": {
+        "count": 0,
+        "pct": 0.0,
+        "example_task_ids": []
+      }
+    },
+    "earliest_causal_failure": {
+      "max_turns_exceeded": {
+        "avg_turn": 32.0,
+        "common_patterns": [
+          "Reached max turns (30)"
+        ]
+      },
+      "wrong_action": {
+        "avg_turn": 21.0,
+        "common_patterns": [
+          "No explicit error detected; agent executed valid actions but final database state did not match"
+        ]
+      },
+      "premature_termination": {
+        "avg_turn": 22.0,
+        "common_patterns": [
+          "Agent declared completion prematurely"
+        ]
+      }
+    }
+  },
+  "optimization_directions": [
+    {
+      "direction": "Multi-stage training: SFT then GRPO",
+      "hypothesis": "SFT warm-start followed by GRPO will combine imitation learning benefits with RL optimization",
+      "expected_impact": "+15-25% over zero-shot baseline",
+      "experiment_cost": "~12 GPU-hours total",
+      "risk": "GRPO may degrade SFT capabilities if hyperparameters are poorly tuned",
+      "confidence": "medium"
+    },
+    {
+      "direction": "GRPO with trajectory-level reward",
+      "hypothesis": "RL with binary task-success reward will optimize for correct action sequences, not just valid tool calls",
+      "expected_impact": "+5-15% success rate over SFT",
+      "experiment_cost": "~8 GPU-hours per GRPO run",
+      "risk": "Sparse reward may cause high variance; low rollout success rate limits learning signal",
+      "confidence": "medium"
+    }
+  ]
+}
